@@ -30,7 +30,7 @@
     const storage='kanban-tasks-v2',customKey='kanban-categories-v1';
     const category=document.getElementById('category'),form=document.getElementById('quickForm'),done=document.getElementById('done');
     const custom=JSON.parse(localStorage.getItem(customKey)||'[]');
-    const options=[['school','学校'],['career','就職活動'],['private','プライベート'],['other','その他'],...custom];
+    const options=custom.length?custom:[['','属性なし']];
     category.innerHTML=options.map(([id,label])=>'<option value="'+id+'">'+label+'</option>').join('');
     form.addEventListener('submit',e=>{e.preventDefault();const title=document.getElementById('title').value.trim();if(!title)return;const tasks=JSON.parse(localStorage.getItem(storage)||'[]');tasks.push({id:Date.now(),title,lane:'inbox',category:category.value,priority:'medium',due:document.getElementById('due').value,done:false,spent:0,running:false,started:0});localStorage.setItem(storage,JSON.stringify(tasks));form.reset();category.value='other';done.classList.add('show');setTimeout(()=>done.classList.remove('show'),2200);document.getElementById('title').focus()});
   </script>

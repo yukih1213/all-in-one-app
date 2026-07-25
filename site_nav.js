@@ -49,6 +49,15 @@
     if (link.getAttribute('href') === current) link.classList.add('current-page');
   });
 
+  const categoryInput = document.getElementById('categoryInput');
+  if (categoryInput && typeof customCategories !== 'undefined') {
+    const addCategory = document.getElementById('addCategory');
+    const refreshOnly = () => { categoryInput.innerHTML = customCategories.length ? customCategories.map(([id,label]) => `<option value="${id}">${label}</option>`).join('') : '<option value="">属性なし</option>'; categoryInput.value = customCategories[0]?.[0] || ''; };
+    refreshCategories = refreshOnly;
+    refreshOnly();
+    categoryInput.value = customCategories[0]?.[0] || '';
+    if (addCategory) { addCategory.style.cssText += ';display:inline-flex!important;align-items:center;justify-content:center'; }
+  }
   if (current === 'study_time.html') {
     const hours = document.getElementById('hours');
     const minutes = document.getElementById('minutes');
