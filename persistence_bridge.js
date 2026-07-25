@@ -137,7 +137,6 @@ async function downloadOrCreate() {
       location.reload();
       return;
     }
-    showStatus('クラウドと同期済み');
   } finally {
     syncBusy = false;
   }
