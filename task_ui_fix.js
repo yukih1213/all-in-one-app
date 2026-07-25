@@ -778,7 +778,7 @@
   function openDeletedTasks() {
     purgeDeletedTasks();
     const root = document.getElementById('deletedTaskList');
-    root.innerHTML = deletedTasks.length ? deletedTasks.map(item => '<div class="deleted-task-row" data-id="'+item.task.id+'"><div><div class="deleted-task-name">'+esc(item.task.title)+'</div><div class="deleted-task-date">'+new Date(item.deletedAt).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})+' に削除</div></div><button class="deleted-task-restore">復元</button></div>').join('') : '<div class="deleted-task-empty">削除済みのタスクはありません</div>';
+    root.innerHTML = deletedTasks.length ? deletedTasks.map(item => '<div class="deleted-task-row" data-id="'+item.task.id+'"><div><div class="deleted-task-name">'+esc(item.task.title)+'</div><div class="deleted-task-date">'+new Date(item.deletedAt).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})+' に削除</div></div><div style="display:flex;align-items:center;gap:7px"><button class="deleted-task-restore">復元</button><button class="deleted-task-permanent" aria-label="完全に削除" title="完全に削除" style="width:30px;height:30px;border:0;border-radius:50%;background:#fff0f0;color:#c97878;font-size:15px;cursor:pointer">🗑</button></div></div>').join('') : '<div class="deleted-task-empty">削除済みのタスクはありません</div>';
     deletedModal.classList.add('open');
   }
   deletedButton.onclick = openDeletedTasks;
@@ -786,6 +786,7 @@
     if (event.target === deletedModal || event.target.closest('.deleted-task-close')) deletedModal.classList.remove('open');
     const row = event.target.closest('.deleted-task-row');
     if (row && event.target.closest('.deleted-task-restore')) { restoreDeletedTask(row.dataset.id); row.remove(); if (!deletedTasks.length) document.getElementById('deletedTaskList').innerHTML='<div class="deleted-task-empty">削除済みのタスクはありません</div>'; }
+    if (row && event.target.closest('.deleted-task-permanent')) { if (!window.confirm('このタスクを完全に削除しますか？')) return; deletedTasks = deletedTasks.filter(item => String(item.task.id) !== String(row.dataset.id)); saveDeletedTasks(); row.remove(); updateDeletedButton(); if (!deletedTasks.length) document.getElementById('deletedTaskList').innerHTML='<div class="deleted-task-empty">削除済みのタスクはありません</div>'; }
   };
   purgeDeletedTasks();
   setInterval(purgeDeletedTasks,60*60*1000);
