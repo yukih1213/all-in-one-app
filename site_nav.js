@@ -41,7 +41,7 @@
       link.className = 'habit-page-link';
       nav.append(link);
     }
-    if (!nav.querySelector('a[href="quick_add.html"]')) {
+    if (window.matchMedia('(max-width:700px)').matches && !nav.querySelector('a[href="quick_add.html"]')) {
       const link = document.createElement('a');
       link.href = 'quick_add.html';
       link.textContent = 'クイック追加';
