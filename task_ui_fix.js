@@ -1,4 +1,6 @@
 (() => {
+  if (window.__taskUiFixLoaded) return;
+  window.__taskUiFixLoaded = true;
   const style = document.createElement('style');
   style.textContent = `
     .lane-add,.week-add{display:none!important}
@@ -95,7 +97,7 @@
         if (!title) return;
         tasks.push({
           id:Date.now(), title, lane:sectionInput.value,
-          category:form.querySelector('[name="category"]')?.value || 'other',
+          category:form.querySelector('[name="category"]')?.value || '',
           priority:form.querySelector('[name="priority"]')?.value || 'medium',
           due:form.querySelector('[name="due"]')?.value || '',
           done:false, spent:0, running:false, started:0
@@ -104,7 +106,7 @@
         form.reset();
         sectionInput.value = 'inbox';
         form.querySelector('[name="priority"]').value = 'medium';
-        form.querySelector('[name="category"]').value = 'other';
+        form.querySelector('[name="category"]').value = '';
         render();
       }, true);
     }
@@ -114,7 +116,8 @@
   const categoryColors = JSON.parse(localStorage.getItem(categoryColorKey) || '{}');
   const categoryNameKey = 'kanban-category-names-v1';
   const categoryNames = JSON.parse(localStorage.getItem(categoryNameKey) || '{}');
-  Object.assign(categoryLabels, categoryNames);
+  const categoryLabelState = typeof categoryLabels === 'object' ? categoryLabels : {};
+  Object.assign(categoryLabelState, categoryNames);
   const colorChoices = ['#ac725e','#d06b64','#f83a22','#fa573c','#ff7537','#ffad46','#42d692','#16a765','#7bd148','#b3dc6c','#fbe983','#fad165','#92e1c0','#9fe1e7','#9fc6e7','#4986e7','#9a9cff','#b99aff','#c2c2c2','#f691b2'];
   function categoryColor(id) {
     return categoryColors[id] || ({school:'#aecbfa',career:'#fbbc04',private:'#d7aefb',other:'#cbf0f8'}[id] || '#e5e7eb');
@@ -152,7 +155,7 @@
       document.querySelectorAll('.category-row-colors').forEach(colors => colors.classList.remove('open'));
     };
     document.querySelectorAll('.category-color').forEach(button => button.onclick = () => { selectedCategoryColor = button.dataset.color; document.getElementById('categoryColors').classList.remove('open'); renderCategoryManager(); });
-    const allCategories = [['school',categoryLabels.school],['career',categoryLabels.career],['private',categoryLabels.private],['other',categoryLabels.other],...customCategories];
+    const allCategories = [...customCategories];
     document.getElementById('categoryList').innerHTML = allCategories.map(([id,label]) => '<div class="category-row" data-category-id="'+id+'"><div class="category-row-header"><button class="category-row-trigger" type="button" style="background:'+categoryColor(id)+'"></button><input class="category-name-edit" maxlength="20" value="'+esc(label)+'"></div><div class="category-row-colors">'+colorChoices.map(color => '<button type="button" class="'+(categoryColor(id)===color?'selected':'')+'" data-color="'+color+'" style="background:'+color+'"></button>').join('')+'</div></div>').join('');
     document.querySelectorAll('.category-row').forEach(row => {
       const id = row.dataset.categoryId;
@@ -166,7 +169,7 @@
         if (!name) return;
         const custom = customCategories.find(item => item[0] === id);
         if (custom) { custom[1] = name; saveCategories(); }
-        else { categoryLabels[id] = name; categoryNames[id] = name; localStorage.setItem(categoryNameKey, JSON.stringify(categoryNames)); }
+        else { categoryLabelState[id] = name; categoryNames[id] = name; localStorage.setItem(categoryNameKey, JSON.stringify(categoryNames)); }
         refreshCategories(); render(); paintCategoryColors();
       };
       row.querySelectorAll('[data-color]').forEach(button => button.onclick = () => {
@@ -317,7 +320,7 @@
     editingId = id;
     const form = editorModal.querySelector('form');
     form.title.value = task.title;
-    form.category.innerHTML = [['school','学校'],['career','就職活動'],['private','プライベート'],['other','その他'],...customCategories].map(([value,label]) => '<option value="'+value+'">'+esc(label)+'</option>').join('');
+    form.category.innerHTML = [['','属性なし'],...customCategories].map(([value,label]) => '<option value="'+value+'">'+esc(label)+'</option>').join('');
     form.category.value = task.category;
     form.priority.value = task.priority;
     form.due.value = task.due || '';
