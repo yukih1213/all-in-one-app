@@ -45,6 +45,7 @@
     });
   });
   document.querySelectorAll('.page-nav a,.nav a').forEach(link => {
+    if (link.getAttribute('href') === 'reports.html') link.textContent = '日記';
     if (link.getAttribute('href') === current) link.classList.add('current-page');
   });
 
