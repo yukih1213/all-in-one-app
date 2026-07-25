@@ -30,7 +30,7 @@
         <span class="section-label">今日のこと</span><textarea id="entry" class="editor" placeholder="今日あったこと、感じたことを自由に書いてみよう"></textarea>
         <div class="save-row"><span id="saved" class="saved"></span><button id="save" class="save">日記を保存</button></div><div id="diaryCheer" class="diary-cheer">今日も1日お疲れ様！ 🌼</div>
       </article>
-      <aside class="side"><section class="card"><h2 class="card-title">今月の気分</h2><div class="month-nav"><button id="prevMonth">‹</button><span id="monthTitle"></span><button id="nextMonth">›</button></div><div class="week"><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span><span>日</span></div><div id="calendar" class="calendar"></div></section><section class="card"><h2 class="card-title">日記について</h2><p class="hint">気分をひとつ選んで、その日のことを自由に残せます。カレンダーの色付きの日を押すと、過去の日記を開けます。</p><div class="export-divider"></div><p class="export-label">日記を手元に残す</p><p class="export-hint">期間を選び、4日ごとまたは1週間ごとにまとめてPDF保存できます。</p><button id="openExport" class="export-button" type="button">日記をPDFに書き出す</button></section></aside>
+      <aside class="side"><section class="card"><h2 class="card-title">今月の気分</h2><div class="month-nav"><button id="prevMonth">‹</button><span id="monthTitle"></span><button id="nextMonth">›</button></div><div class="week"><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span><span>日</span></div><div id="calendar" class="calendar"></div></section><section class="card"><h2 class="card-title">日記について</h2><p class="hint">気分をひとつ選んで、その日のことを自由に残せます。カレンダーの色付きの日を押すと、過去の日記を開けます。</p><div class="export-divider"></div><p class="export-label">日記を手元に残す</p><p class="export-hint">期間を選び、1日ごとまたは4日ごとにPDF保存できます。</p><button id="openExport" class="export-button" type="button">日記をPDFに書き出す</button></section></aside>
     </section>
   </main><div id="diaryUndo" class="diary-undo"><span>日記を削除しました</span><button type="button">元に戻す</button></div><div id="exportModal" class="export-modal" aria-hidden="true"><section class="export-panel" role="dialog" aria-modal="true" aria-labelledby="exportTitle"><div class="export-head"><h2 id="exportTitle">日記を書き出す</h2><button id="closeExport" class="export-close" type="button" aria-label="閉じる">×</button></div><p class="export-copy">画面の日記ページに近い見た目で、PDFとして保存できます。</p><div class="export-mode"><label><input type="radio" name="exportMode" value="one"><span>1日 / ページ</span></label><label><input type="radio" name="exportMode" value="four" checked><span>4日 / ページ</span></label></div><div class="export-dates"><label>開始日<input id="exportStart" type="date"></label><span>〜</span><label>終了日<input id="exportEnd" type="date"></label></div><p id="exportError" class="export-error"></p><button id="runExport" class="export-run" type="button">PDF書き出し画面を開く</button></section></div>
   <script>
@@ -64,21 +64,12 @@
       const entries=Object.keys(data).filter(k=>k>=start&&k<=end&&hasEntry(data[k])).sort().map(k=>({date:k,...data[k]}));
       if(!entries.length){$('exportError').textContent='指定期間に保存済みの日記がありません。';return}
       const pages=[];
-      if(mode==='week'){
-        const grouped={};
-        entries.forEach(item=>(grouped[mondayKey(item.date)]||(grouped[mondayKey(item.date)]=[])).push(item));
-        Object.keys(grouped).sort().forEach(week=>pages.push({items:grouped[week],week}));
-      }else{
-        for(let i=0;i<entries.length;i+=4)pages.push({items:entries.slice(i,i+4)});
-      }
+      const perPage=mode==='one'?1:4;
+      for(let i=0;i<entries.length;i+=perPage)pages.push({items:entries.slice(i,i+perPage)});
       const moodLabel=id=>(moods.find(m=>m.id===id)||{}).label||'未選択';
       const cards=pages.map(page=>{
-        let heading='';
-        if(page.week){
-          const from=new Date(page.week+'T00:00:00'),to=new Date(from);to.setDate(to.getDate()+6);
-          heading='<h1 class="week-title">'+escapeHtml(from.toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'}))+' 〜 '+escapeHtml(to.toLocaleDateString('ja-JP',{month:'long',day:'numeric'}))+'</h1>';
-        }
-        return '<section class="page '+(mode==='week'?'weekly':'')+'">'+heading+page.items.map(item=>{
+        const pageClass=mode==='one'?'single':'four';
+        return '<section class="page '+pageClass+'">'+page.items.map(item=>{
           const d=new Date(item.date+'T00:00:00'),date=d.toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
           return '<article class="entry"><header><h2>'+escapeHtml(date)+'</h2><div><span>'+escapeHtml(moodLabel(item.mood))+'</span><b>'+(item.score?escapeHtml(item.score)+' / 5':'点数なし')+'</b></div></header><p>'+escapeHtml(item.text).replace(/\n/g,'<br>')+'</p></article>';
         }).join('')+'</section>';
