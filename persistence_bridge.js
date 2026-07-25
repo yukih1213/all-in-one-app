@@ -26,11 +26,30 @@ let user = null;
 let lastLocalHash = '';
 let syncBusy = false;
 
-const readLocal = () => Object.fromEntries(
-  keys.filter(key => localStorage.getItem(key) !== null).map(key => [key, localStorage.getItem(key)])
-);
 const hash = value => JSON.stringify(value);
 const dataRef = () => doc(db, 'users', user.uid, 'app', 'state');
+const sampleTaskTitles = new Set(['ポモドーロを試す', '今日の予定を確認する']);
+const cleanTaskValue = value => {
+  try {
+    const tasks = JSON.parse(value);
+    if (!Array.isArray(tasks)) return value;
+    return JSON.stringify(tasks.filter(task => !sampleTaskTitles.has(task?.title)));
+  } catch {
+    return value;
+  }
+};
+const readLocal = () => Object.fromEntries(keys.flatMap(key => {
+  let value = localStorage.getItem(key);
+  if (value === null) return [];
+  if (key === 'kanban-tasks-v2') {
+    const cleaned = cleanTaskValue(value);
+    if (cleaned !== value) {
+      value = cleaned;
+      localStorage.setItem(key, value);
+    }
+  }
+  return [[key, value]];
+}));
 const hasMeaningfulData = data => Object.values(data || {}).some(value => {
   try {
     const parsed = JSON.parse(value);
@@ -71,7 +90,13 @@ async function downloadOrCreate() {
       return;
     }
 
-    const cloud = snapshot.data().appData;
+    const cloud = { ...snapshot.data().appData };
+    let cleanedCloud = false;
+    if (typeof cloud['kanban-tasks-v2'] === 'string') {
+      const cleanedTasks = cleanTaskValue(cloud['kanban-tasks-v2']);
+      cleanedCloud = cleanedTasks !== cloud['kanban-tasks-v2'];
+      cloud['kanban-tasks-v2'] = cleanedTasks;
+    }
     if (!hasMeaningfulData(cloud) && hasMeaningfulData(localBefore)) {
       await setDoc(dataRef(), { appData: localBefore, updatedAt: Date.now() }, { merge: true });
       lastLocalHash = hash(localBefore);
@@ -81,6 +106,7 @@ async function downloadOrCreate() {
     Object.entries(cloud).forEach(([key, value]) => {
       if (keys.includes(key) && typeof value === 'string') localStorage.setItem(key, value);
     });
+    if (cleanedCloud) await setDoc(dataRef(), { appData: cloud, updatedAt: Date.now() }, { merge: true });
     lastLocalHash = hash(readLocal());
     const version = String(snapshot.data().updatedAt || lastLocalHash.length);
     const reloadKey = `firebase-cloud-loaded-${user.uid}`;
