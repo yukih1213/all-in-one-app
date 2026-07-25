@@ -8,14 +8,13 @@
   <style>
     :root{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans",sans-serif;color:#24343b;background:#f4fbfe;font-weight:400}
     *{box-sizing:border-box}body{margin:0;min-height:100vh;background:linear-gradient(145deg,#f2fbfe,#fbfaf5);padding:env(safe-area-inset-top) 18px env(safe-area-inset-bottom)}
-    main{width:min(100%,520px);margin:0 auto;padding:34px 0 28px}.eyebrow{margin:0 0 8px;color:#7b9aa5;font-size:12px;font-weight:600;letter-spacing:.12em}.title{margin:0;font-size:34px;font-weight:500;letter-spacing:-.05em}.copy{margin:10px 0 24px;color:#78909a;font-size:13px;line-height:1.7}
+    main{width:min(100%,520px);margin:0 auto;padding:34px 0 28px}.topline{display:flex;align-items:center;justify-content:space-between;gap:14px}.eyebrow{margin:0 0 8px;color:#7b9aa5;font-size:12px;font-weight:600;letter-spacing:.12em}.title{margin:0;font-size:34px;font-weight:500;letter-spacing:-.05em}.copy{margin:10px 0 24px;color:#78909a;font-size:13px;line-height:1.7}.nav{display:flex;gap:5px;white-space:nowrap}.nav a{padding:8px 9px;border-radius:10px;background:#fff;color:#6d8791;text-decoration:none;font-size:11px;box-shadow:0 3px 12px #477f9910}.nav a:active{background:#e5f6fb}
     form{display:grid;gap:12px;padding:18px;border-radius:24px;background:#fff;box-shadow:0 16px 42px #477f9918}.field{display:grid;gap:7px;color:#6c858e;font-size:12px;font-weight:500}.input,.select{width:100%;padding:14px;border:1px solid #dcecf1;border-radius:14px;background:#fbfeff;color:#24343b;font:inherit;font-size:16px;outline:none}.input:focus,.select:focus{border-color:#91cfe2;box-shadow:0 0 0 4px #bfeaf533}.add{margin-top:4px;padding:15px;border:0;border-radius:15px;background:#67b8d2;color:white;font:600 15px/1 inherit;cursor:pointer}.add:active{transform:scale(.98)}.back{display:block;margin:18px auto 0;color:#71909b;text-align:center;text-decoration:none;font-size:12px}.done{display:none;margin-top:18px;padding:14px;border-radius:14px;background:#e5f7ed;color:#4d8b68;text-align:center;font-size:13px}.done.show{display:block}
   </style>
 </head>
 <body>
   <main>
-    <p class="eyebrow">QUICK CAPTURE</p>
-    <h1 class="title">タスクを追加</h1>
+    <div class="topline"><div><p class="eyebrow">QUICK CAPTURE</p><h1 class="title">タスクを追加</h1></div><nav class="nav"><a href="index.html">タスク</a><a href="habit_manager.html">習慣</a><a href="reports.html">日記</a></nav></div>
     <p class="copy">思いついたことをすぐにメモ。追加したタスクは自動でインボックスに入ります。</p>
     <form id="quickForm">
       <label class="field">タスク名<input id="title" class="input" maxlength="100" autocomplete="off" placeholder="タスク名を入力" required autofocus></label>
@@ -27,6 +26,7 @@
     <a class="back" href="index.html">タスク一覧へ戻る</a>
   </main>
   <script>
+    if(window.matchMedia('(min-width:701px)').matches) location.replace('index.html');
     const storage='kanban-tasks-v2',customKey='kanban-categories-v1';
     const category=document.getElementById('category'),form=document.getElementById('quickForm'),done=document.getElementById('done');
     const custom=JSON.parse(localStorage.getItem(customKey)||'[]');
