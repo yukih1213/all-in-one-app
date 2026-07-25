@@ -28,6 +28,22 @@ let syncBusy = false;
 
 const hash = value => JSON.stringify(value);
 const dataRef = () => doc(db, 'users', user.uid, 'app', 'state');
+const taskBlankSlateVersion = 1;
+const emptyTaskValues = {
+  'kanban-tasks-v2': '[]',
+  'kanban-categories-v1': '[]',
+  'kanban-category-colors-v1': '{}',
+  'kanban-category-names-v1': '{}',
+  'kanban-deleted-tasks-v1': '[]',
+  'kanban-task-archive-v1': '[]'
+};
+const emptyTaskData = data => ({ ...(data || {}), ...emptyTaskValues });
+const localBlankKey = 'michikusa-task-blank-v2';
+if (localStorage.getItem(localBlankKey) !== '1') {
+  Object.entries(emptyTaskValues).forEach(([key, value]) => localStorage.setItem(key, value));
+  localStorage.setItem(localBlankKey, '1');
+  queueMicrotask(() => location.reload());
+}
 const sampleTaskTitles = new Set(['ポモドーロを試す', '今日の予定を確認する']);
 const cleanTaskValue = value => {
   try {
@@ -84,13 +100,17 @@ async function downloadOrCreate() {
     const snapshot = await getDoc(dataRef());
     const localBefore = readLocal();
     if (!snapshot.exists() || !snapshot.data().appData) {
-      await setDoc(dataRef(), { appData: localBefore, updatedAt: Date.now() }, { merge: true });
-      lastLocalHash = hash(localBefore);
+      const blankLocal = emptyTaskData(localBefore);
+      await setDoc(dataRef(), { appData: blankLocal, taskBlankSlateVersion, updatedAt: Date.now() }, { merge: true });
+      lastLocalHash = hash(blankLocal);
       showStatus('この端末のデータを同期しました');
       return;
     }
 
-    const cloud = { ...snapshot.data().appData };
+    const cloudState = snapshot.data();
+    let cloud = { ...cloudState.appData };
+    const resetCloudTasks = Number(cloudState.taskBlankSlateVersion || 0) < taskBlankSlateVersion;
+    if (resetCloudTasks) cloud = emptyTaskData(cloud);
     let cleanedCloud = false;
     if (typeof cloud['kanban-tasks-v2'] === 'string') {
       const cleanedTasks = cleanTaskValue(cloud['kanban-tasks-v2']);
@@ -98,7 +118,7 @@ async function downloadOrCreate() {
       cloud['kanban-tasks-v2'] = cleanedTasks;
     }
     if (!hasMeaningfulData(cloud) && hasMeaningfulData(localBefore)) {
-      await setDoc(dataRef(), { appData: localBefore, updatedAt: Date.now() }, { merge: true });
+      await setDoc(dataRef(), { appData: localBefore, taskBlankSlateVersion, updatedAt: Date.now() }, { merge: true });
       lastLocalHash = hash(localBefore);
       showStatus('この端末のデータをクラウドへ保存しました');
       return;
@@ -106,7 +126,9 @@ async function downloadOrCreate() {
     Object.entries(cloud).forEach(([key, value]) => {
       if (keys.includes(key) && typeof value === 'string') localStorage.setItem(key, value);
     });
-    if (cleanedCloud) await setDoc(dataRef(), { appData: cloud, updatedAt: Date.now() }, { merge: true });
+    if (cleanedCloud || resetCloudTasks) {
+      await setDoc(dataRef(), { appData: cloud, taskBlankSlateVersion, updatedAt: Date.now() }, { merge: true });
+    }
     lastLocalHash = hash(readLocal());
     const version = String(snapshot.data().updatedAt || lastLocalHash.length);
     const reloadKey = `firebase-cloud-loaded-${user.uid}`;
