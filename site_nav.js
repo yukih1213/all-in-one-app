@@ -15,7 +15,7 @@
       border-radius:10px!important;text-decoration:none!important;font-size:11px!important;
       font-weight:500!important;line-height:1!important;transform:none!important
     }
-    .quick-add-link{display:inline-flex!important;background:#e4f4fb!important;color:#39748b!important}
+    .quick-add-link{display:none!important}
     .page-nav a:not(.current-page),.nav a:not(.current-page){opacity:.38!important;filter:saturate(.65)}
     .page-nav a.current-page,.nav a.current-page{opacity:1!important;filter:none!important;box-shadow:0 4px 12px #1d1d1f14!important}
     .top .page-nav a[href="habit_manager.html"],.top .nav a[href="habit_manager.html"]{background:#ddd5f3!important;color:#5c5278!important}
@@ -27,6 +27,7 @@
     @media(max-width:700px){
       .app{padding:32px 18px 56px!important}
       .top .page-nav,.top .nav{position:static!important;justify-content:flex-start!important;margin-top:10px!important;overflow-x:auto!important;max-width:100%!important}
+      .quick-add-link{display:inline-flex!important;background:#e4f4fb!important;color:#39748b!important}
     }
   `;
   document.head.append(style);
