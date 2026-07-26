@@ -136,6 +136,25 @@
   setTimeout(positionCategoryManager, 0);
   document.getElementById('composer') && new MutationObserver(positionCategoryManager).observe(document.getElementById('composer'), {childList:true});
   if (current === 'study_time.html') {
+    const positionMaterialManager = () => {
+      const manageButton = document.getElementById('manageMaterials');
+      const materialsHeading = document.querySelector('.layout > .panel:first-child .panel-title');
+      if (!manageButton || !materialsHeading) return false;
+      manageButton.textContent = '⚙︎';
+      manageButton.title = '教材を管理';
+      manageButton.setAttribute('aria-label', '教材を管理');
+      materialsHeading.append(manageButton);
+      const materialGearStyle = document.getElementById('materialManageGearStyle') || document.head.appendChild(document.createElement('style'));
+      materialGearStyle.id = 'materialManageGearStyle';
+      materialGearStyle.textContent = '.layout>.panel:first-child .panel-title{display:flex!important;align-items:center!important;gap:5px}.layout>.panel:first-child .panel-title #manageMaterials{position:static!important;width:30px!important;height:30px!important;margin:0 0 0 auto!important;padding:0!important;border:0!important;border-radius:9px!important;background:transparent!important;color:#a1aaa4!important;font-size:18px!important;line-height:1!important;box-shadow:none!important;cursor:pointer!important}.layout>.panel:first-child .panel-title #manageMaterials:hover{background:#f1f4f2!important;color:#637169!important}';
+      return true;
+    };
+    if (!positionMaterialManager()) {
+      const materialObserver = new MutationObserver(() => {
+        if (positionMaterialManager()) materialObserver.disconnect();
+      });
+      materialObserver.observe(document.body, {childList:true, subtree:true});
+    }
     const hours = document.getElementById('hours');
     const minutes = document.getElementById('minutes');
     if (hours && minutes && !document.querySelector('.study-time-field')) {
