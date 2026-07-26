@@ -120,6 +120,21 @@
 
   enhanceSelect(categoryInput, '#8a70b2');
   enhanceSelect(document.getElementById('materialSelect'), '#4e9b70');
+  const positionCategoryManager = () => {
+    const categoryManageButton = document.querySelector('.category-manage');
+    const categoryPicker = document.querySelector('.cute-picker');
+    if (!categoryManageButton || !categoryPicker) return;
+    categoryManageButton.textContent = '⚙︎';
+    categoryManageButton.title = '属性を管理';
+    categoryManageButton.setAttribute('aria-label', '属性を管理');
+    if (categoryManageButton.previousElementSibling !== categoryPicker) categoryPicker.after(categoryManageButton);
+    const gearStyle = document.getElementById('categoryManageGearStyle') || document.head.appendChild(document.createElement('style'));
+    gearStyle.id = 'categoryManageGearStyle';
+    gearStyle.textContent = '.category-manage{flex:none!important;width:32px!important;height:32px!important;margin-left:5px!important;padding:0!important;border:0!important;border-radius:10px!important;background:transparent!important;color:#a1aaa4!important;font-size:18px!important;line-height:1!important;cursor:pointer!important}.category-manage:hover{background:#f1f4f2!important;color:#637169!important}';
+  };
+  positionCategoryManager();
+  setTimeout(positionCategoryManager, 0);
+  document.getElementById('composer') && new MutationObserver(positionCategoryManager).observe(document.getElementById('composer'), {childList:true});
   if (current === 'study_time.html') {
     const hours = document.getElementById('hours');
     const minutes = document.getElementById('minutes');
