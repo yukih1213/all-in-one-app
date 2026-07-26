@@ -197,15 +197,15 @@ function mountAuthButton() {
         }
         const provider = new GoogleAuthProvider();
         provider.setCustomParameters({ prompt: 'select_account' });
-        const useRedirect = matchMedia('(pointer:coarse)').matches || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        if (useRedirect) {
-          await signInWithRedirect(auth, provider);
-          return;
-        }
         try {
           await signInWithPopup(auth, provider);
         } catch (error) {
-          if (error?.code !== 'auth/popup-blocked') throw error;
+          const redirectFallbackCodes = new Set([
+            'auth/popup-blocked',
+            'auth/operation-not-supported-in-this-environment',
+            'auth/web-storage-unsupported'
+          ]);
+          if (!redirectFallbackCodes.has(error?.code)) throw error;
           await signInWithRedirect(auth, provider);
         }
       }
@@ -250,15 +250,6 @@ onAuthStateChanged(auth, async signedInUser => {
   } catch (error) {
     console.error(error);
     showStatus('同期に失敗しました。Firestoreのルールを確認してください', true);
-  }
-});
-
-// Mobile browsers return to the app after the Google redirect. Read the
-// redirect result explicitly so the UI and cloud sync update immediately.
-getRedirectResult(auth).catch(error => {
-  if (error?.code && error.code !== 'auth/no-auth-event') {
-    console.error(error);
-    showStatus(loginErrorMessage(error), true);
   }
 });
 
