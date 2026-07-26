@@ -96,6 +96,8 @@ function showStatus(message, isError = false) {
   if (!toast) {
     toast = document.createElement('div');
     toast.id = 'firebaseSyncStatus';
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
     toast.style.cssText = 'position:fixed;right:18px;top:62px;z-index:10001;padding:8px 11px;border-radius:10px;background:#eef8f2;color:#4b745b;box-shadow:0 5px 18px #0001;font:500 11px/1.4 -apple-system,BlinkMacSystemFont,sans-serif;transition:.2s';
     document.body.append(toast);
   }
@@ -185,6 +187,7 @@ function mountAuthButton() {
   const button = document.createElement('button');
   button.id = 'firebaseAuthButton';
   button.type = 'button';
+  button.setAttribute('aria-label', 'Googleアカウント');
   button.style.cssText = 'position:fixed;top:14px;right:18px;z-index:10000;display:flex;align-items:center;gap:7px;min-height:36px;border:1px solid #0000000d;border-radius:999px;padding:5px 11px 5px 6px;background:#fff;box-shadow:0 4px 16px #0001;color:#3b403d;font:500 12px/1 -apple-system,BlinkMacSystemFont,sans-serif;cursor:pointer';
   button.onclick = async () => {
     try {
