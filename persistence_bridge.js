@@ -253,6 +253,15 @@ onAuthStateChanged(auth, async signedInUser => {
   }
 });
 
+// Mobile browsers return to the app after the Google redirect. Read the
+// redirect result explicitly so the UI and cloud sync update immediately.
+getRedirectResult(auth).catch(error => {
+  if (error?.code && error.code !== 'auth/no-auth-event') {
+    console.error(error);
+    showStatus(loginErrorMessage(error), true);
+  }
+});
+
 setInterval(() => uploadIfChanged().catch(error => {
   console.error(error);
   showStatus('変更を同期できませんでした', true);
