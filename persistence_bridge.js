@@ -1,5 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js';
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js';
 
 const app = initializeApp({
@@ -98,6 +98,15 @@ function showStatus(message, isError = false) {
   showStatus.timer = setTimeout(() => { toast.style.opacity = '0'; }, 2600);
 }
 
+function loginErrorMessage(error) {
+  const code = error?.code || '';
+  if (code === 'auth/unauthorized-domain') return 'このサイトのドメインがFirebaseに許可されていません';
+  if (code === 'auth/popup-blocked') return 'ログイン画面を開けなかったため、もう一度お試しください';
+  if (code === 'auth/popup-closed-by-user') return 'Googleログインがキャンセルされました';
+  if (code === 'auth/network-request-failed') return '通信を確認して、もう一度お試しください';
+  return 'ログイン処理でエラーが発生しました';
+}
+
 async function downloadOrCreate() {
   if (!user || syncBusy) return;
   syncBusy = true;
@@ -173,13 +182,27 @@ function mountAuthButton() {
       if (user) {
         if (confirm('ログアウトしますか？')) await signOut(auth);
       } else {
+        if (location.protocol === 'file:') {
+          showStatus('ログインは公開サイトから行ってください', true);
+          return;
+        }
         const provider = new GoogleAuthProvider();
         provider.setCustomParameters({ prompt: 'select_account' });
-        await signInWithPopup(auth, provider);
+        const useRedirect = matchMedia('(pointer:coarse)').matches || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (useRedirect) {
+          await signInWithRedirect(auth, provider);
+          return;
+        }
+        try {
+          await signInWithPopup(auth, provider);
+        } catch (error) {
+          if (error?.code !== 'auth/popup-blocked') throw error;
+          await signInWithRedirect(auth, provider);
+        }
       }
     } catch (error) {
       console.error(error);
-      showStatus('ログイン処理でエラーが発生しました', true);
+      showStatus(loginErrorMessage(error), true);
     }
   };
   document.body.append(button);
