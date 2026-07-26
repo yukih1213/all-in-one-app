@@ -95,8 +95,53 @@
         laneSelect.value = sectionInput.value;
         if (dueInput && sectionInput.value === 'now') dueInput.value = todayValue();
       });
+      sectionInput.classList.add('section-native-hidden');
+      const sectionPicker = document.createElement('div');
+      sectionPicker.className = 'section-picker';
+      const sectionButton = document.createElement('button');
+      sectionButton.type = 'button';
+      sectionButton.className = 'section-picker-button';
+      sectionButton.setAttribute('aria-haspopup', 'listbox');
+      sectionButton.setAttribute('aria-expanded', 'false');
+      const sectionMenu = document.createElement('div');
+      sectionMenu.className = 'section-picker-menu';
+      sectionMenu.setAttribute('role', 'listbox');
+      const availableSections = ['inbox', 'now', 'next', 'waiting'];
+      const sectionNames = {inbox:'インボックス', now:'今やる', next:'今日やる', waiting:'対応待ち'};
+      const syncSectionPicker = () => {
+        sectionButton.textContent = sectionNames[sectionInput.value] || 'インボックス';
+        sectionMenu.querySelectorAll('button').forEach(button => button.classList.toggle('selected', button.dataset.value === sectionInput.value));
+      };
+      const closeSectionPicker = () => {
+        sectionPicker.classList.remove('open');
+        sectionButton.setAttribute('aria-expanded', 'false');
+      };
+      availableSections.forEach(lane => {
+        const option = document.createElement('button');
+        option.type = 'button';
+        option.dataset.value = lane;
+        option.setAttribute('role', 'option');
+        option.textContent = sectionNames[lane];
+        option.addEventListener('click', () => {
+          sectionInput.value = lane;
+          sectionInput.dispatchEvent(new Event('change', {bubbles:true}));
+          syncSectionPicker();
+          closeSectionPicker();
+        });
+        sectionMenu.append(option);
+      });
+      sectionButton.addEventListener('click', event => {
+        event.stopPropagation();
+        const open = sectionPicker.classList.toggle('open');
+        sectionButton.setAttribute('aria-expanded', String(open));
+      });
+      sectionPicker.addEventListener('click', event => event.stopPropagation());
+      document.addEventListener('click', closeSectionPicker);
+      sectionPicker.append(sectionButton, sectionMenu);
+      sectionInput.after(sectionPicker);
+      syncSectionPicker();
       const sectionCss = document.createElement('style');
-      sectionCss.textContent = '#sectionInput{display:inline-block!important;border:1px solid #c2e3ef!important;border-radius:999px!important;background:#eaf7fc!important;color:#39748b!important;padding:9px 11px!important;font-size:12px!important;font-weight:650!important;outline:0}@media(max-width:620px){#sectionInput{order:5}}';
+      sectionCss.textContent = '#sectionInput.section-native-hidden{display:none!important}.section-picker{position:relative;flex:none}.section-picker-button{min-width:96px;padding:10px 30px 10px 12px;border:0;border-left:1px solid #e5e5e7;background:transparent;color:#74777b;font:400 12px/1.2 inherit;text-align:left;cursor:pointer}.section-picker-button:after{content:"⌄";position:absolute;right:10px;color:#9a9da1}.section-picker-menu{position:absolute;z-index:1000;top:calc(100% + 7px);left:0;display:none;width:148px;padding:6px;border:1px solid #e5e7e9;border-radius:13px;background:#fff;box-shadow:0 12px 30px #1d1d1f1c}.section-picker.open .section-picker-menu{display:grid;gap:3px}.section-picker-menu button{padding:9px 10px;border:0;border-radius:9px;background:transparent;color:#555b60;font:500 12px/1.2 inherit;text-align:left;cursor:pointer}.section-picker-menu button:hover,.section-picker-menu button.selected{background:#eaf7fc;color:#39748b}@media(max-width:620px){.section-picker{order:5}.section-picker-menu{position:fixed;left:18px;right:18px;top:auto;bottom:18px;width:auto;padding:9px;border-radius:18px}.section-picker-menu button{padding:13px 14px;font-size:14px}}';
       document.head.append(sectionCss);
       form.addEventListener('submit', event => {
         event.preventDefault();
@@ -115,6 +160,7 @@
         sectionInput.value = 'inbox';
         laneSelect.value = 'inbox';
         if (dueInput) dueInput.value = todayValue();
+        syncSectionPicker();
         form.querySelector('[name="priority"]').value = 'medium';
         form.querySelector('[name="category"]').value = '';
         render();
