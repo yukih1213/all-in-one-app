@@ -136,6 +136,9 @@
   setTimeout(positionCategoryManager, 0);
   document.getElementById('composer') && new MutationObserver(positionCategoryManager).observe(document.getElementById('composer'), {childList:true});
   if (current === 'study_time.html') {
+    const primaryStudyButtonStyle = document.getElementById('studyPrimaryButtonStyle') || document.head.appendChild(document.createElement('style'));
+    primaryStudyButtonStyle.id = 'studyPrimaryButtonStyle';
+    primaryStudyButtonStyle.textContent = '#saveLog,.timer-row button.primary,#studyTimerApply,.study-alarm button,.new-material-form button,.study-log-actions button:not(.cancel-log):not(.delete-log){background:#8ec9e4!important;color:#1e5870!important;box-shadow:0 3px 10px #5ca9cd2b!important}.study-alarm #studyAlarmExtend{background:#eef8fc!important;color:#3e7891!important;box-shadow:inset 0 0 0 1px #b9ddec!important}#saveLog:hover,.timer-row button.primary:hover,#studyTimerApply:hover,.study-alarm button:hover,.new-material-form button:hover,.study-log-actions button:not(.cancel-log):not(.delete-log):hover{background:#7dbddd!important;color:#174d64!important}';
     const positionMaterialManager = () => {
       const manageButton = document.getElementById('manageMaterials');
       const materialsHeading = document.querySelector('.layout > .panel:first-child .panel-title');
