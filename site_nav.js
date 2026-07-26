@@ -140,5 +140,26 @@
       timeStyle.textContent = '.study-time-field{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:7px;min-width:0;color:#68766e;font-size:12px}.study-time-field .input{min-width:0;width:100%}';
       document.head.append(timeStyle);
     }
+    const recordGrid = document.querySelector('.form-grid');
+    const materialSelect = document.getElementById('materialSelect');
+    const materialPicker = materialSelect?.nextElementSibling;
+    const hourField = document.getElementById('hours')?.closest('.study-time-field');
+    const minuteField = document.getElementById('minutes')?.closest('.study-time-field');
+    if (recordGrid && materialSelect && materialPicker && hourField && minuteField && !recordGrid.classList.contains('study-record-grid')) {
+      recordGrid.classList.add('study-record-grid');
+      const materialRow = document.createElement('div');
+      materialRow.className = 'study-record-row study-record-material-row';
+      materialRow.innerHTML = '<span class="study-record-label">教材</span>';
+      const durationRow = document.createElement('div');
+      durationRow.className = 'study-record-row study-record-duration-row';
+      durationRow.innerHTML = '<span class="study-record-label">学習時間</span><div class="study-duration-inputs"></div>';
+      materialRow.append(materialSelect, materialPicker);
+      durationRow.querySelector('.study-duration-inputs').append(hourField, minuteField);
+      recordGrid.prepend(durationRow);
+      recordGrid.prepend(materialRow);
+      const rowStyle = document.createElement('style');
+      rowStyle.textContent = '.form-grid.study-record-grid{grid-template-columns:1fr 1fr!important;gap:10px!important}.study-record-row{grid-column:1/-1;display:grid;gap:6px}.study-record-label{color:#7c8880;font-size:11px;font-weight:700}.study-record-material-row .cute-picker{width:100%}.study-duration-inputs{display:grid;grid-template-columns:1fr 1fr;gap:9px}.study-duration-inputs .study-time-field{min-height:40px;padding:0 11px;border:1px solid #e1e6e3;border-radius:12px;background:#fff}.study-duration-inputs .study-time-field .input{padding:9px 0!important;border:0!important;background:transparent!important}@media(max-width:520px){.study-duration-inputs{grid-template-columns:1fr 1fr}}';
+      document.head.append(rowStyle);
+    }
   }
 })();
