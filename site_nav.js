@@ -65,6 +65,61 @@
     categoryInput.value = customCategories[0]?.[0] || '';
     if (addCategory) addCategory.remove();
   }
+
+  function enhanceSelect(select, accent = '#5d9fbd') {
+    if (!select || select.dataset.cutePicker === 'yes') return;
+    select.dataset.cutePicker = 'yes';
+    select.classList.add('cute-picker-native');
+    const shell = document.createElement('div');
+    shell.className = 'cute-picker';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'cute-picker-button';
+    button.setAttribute('aria-haspopup', 'listbox');
+    button.setAttribute('aria-expanded', 'false');
+    const menu = document.createElement('div');
+    menu.className = 'cute-picker-menu';
+    menu.setAttribute('role', 'listbox');
+    const close = () => { shell.classList.remove('open'); button.setAttribute('aria-expanded', 'false'); };
+    const render = () => {
+      const selected = select.selectedOptions?.[0];
+      button.textContent = selected?.textContent || '選択してください';
+      menu.innerHTML = '';
+      [...select.options].forEach(option => {
+        const choice = document.createElement('button');
+        choice.type = 'button';
+        choice.setAttribute('role', 'option');
+        choice.textContent = option.textContent;
+        choice.classList.toggle('selected', option.selected);
+        choice.disabled = option.disabled;
+        choice.onclick = () => {
+          select.value = option.value;
+          select.dispatchEvent(new Event('change', {bubbles:true}));
+          render();
+          close();
+        };
+        menu.append(choice);
+      });
+    };
+    button.onclick = event => {
+      event.stopPropagation();
+      const open = shell.classList.toggle('open');
+      button.setAttribute('aria-expanded', String(open));
+    };
+    shell.onclick = event => event.stopPropagation();
+    document.addEventListener('click', close);
+    select.addEventListener('change', render);
+    new MutationObserver(render).observe(select, {childList:true, subtree:true, attributes:true});
+    shell.append(button, menu);
+    select.after(shell);
+    render();
+    const style = document.getElementById('cutePickerStyle') || document.head.appendChild(document.createElement('style'));
+    style.id = 'cutePickerStyle';
+    style.textContent = '.cute-picker-native{display:none!important}.cute-picker{position:relative;flex:1;min-width:0;--picker-accent:'+accent+'}.cute-picker-button{position:relative;width:100%;min-height:40px;padding:10px 34px 10px 12px;border:1px solid #e1e6e3;border-radius:12px;background:#fff;color:#4d5952;font:500 12px/1.2 -apple-system,BlinkMacSystemFont,sans-serif;text-align:left;cursor:pointer}.cute-picker-button:after{content:"⌄";position:absolute;right:12px;top:50%;transform:translateY(-54%);color:#98a19b;font-size:15px}.cute-picker-menu{position:absolute;z-index:1500;top:calc(100% + 7px);left:0;display:none;width:max-content;min-width:100%;max-width:min(280px,calc(100vw - 36px));padding:6px;border:1px solid #e3e8e5;border-radius:14px;background:#fff;box-shadow:0 14px 34px #26332c1c}.cute-picker.open .cute-picker-menu{display:grid;gap:3px}.cute-picker-menu button{padding:9px 11px;border:0;border-radius:9px;background:transparent;color:#5b655f;font:500 12px/1.2 -apple-system,BlinkMacSystemFont,sans-serif;text-align:left;white-space:nowrap;cursor:pointer}.cute-picker-menu button:hover,.cute-picker-menu button.selected{background:color-mix(in srgb,var(--picker-accent) 15%,#fff);color:color-mix(in srgb,var(--picker-accent) 78%,#26332c)}.cute-picker-menu button:disabled{opacity:.45;cursor:default}@media(max-width:620px){.cute-picker-menu{position:fixed;left:18px;right:18px;top:auto;bottom:18px;width:auto;max-width:none;padding:9px;border-radius:18px}.cute-picker-menu button{padding:13px 14px;font-size:14px}}';
+  }
+
+  enhanceSelect(categoryInput, '#8a70b2');
+  enhanceSelect(document.getElementById('materialSelect'), '#4e9b70');
   if (current === 'study_time.html') {
     const hours = document.getElementById('hours');
     const minutes = document.getElementById('minutes');

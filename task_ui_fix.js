@@ -163,6 +163,7 @@
         syncSectionPicker();
         form.querySelector('[name="priority"]').value = 'medium';
         form.querySelector('[name="category"]').value = '';
+        form.querySelector('[name="category"]').dispatchEvent(new Event('change', {bubbles:true}));
         render();
       }, true);
     }
