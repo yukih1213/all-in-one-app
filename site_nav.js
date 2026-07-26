@@ -130,7 +130,7 @@
     if (categoryManageButton.previousElementSibling !== categoryPicker) categoryPicker.after(categoryManageButton);
     const gearStyle = document.getElementById('categoryManageGearStyle') || document.head.appendChild(document.createElement('style'));
     gearStyle.id = 'categoryManageGearStyle';
-    gearStyle.textContent = '.category-manage{flex:none!important;width:32px!important;height:32px!important;margin-left:5px!important;padding:0!important;border:0!important;border-radius:10px!important;background:transparent!important;color:#a1aaa4!important;font-size:18px!important;line-height:1!important;cursor:pointer!important}.category-manage:hover{background:#f1f4f2!important;color:#637169!important}';
+    gearStyle.textContent = '.category-manage{flex:none!important;display:inline-grid!important;place-items:center!important;width:36px!important;height:36px!important;margin-left:5px!important;padding:0!important;border:0!important;border-radius:11px!important;background:transparent!important;color:#a1aaa4!important;font-size:21px!important;line-height:1!important;cursor:pointer!important}.category-manage:hover{background:#f1f4f2!important;color:#637169!important}';
   };
   positionCategoryManager();
   setTimeout(positionCategoryManager, 0);
@@ -146,7 +146,7 @@
       materialsHeading.append(manageButton);
       const materialGearStyle = document.getElementById('materialManageGearStyle') || document.head.appendChild(document.createElement('style'));
       materialGearStyle.id = 'materialManageGearStyle';
-      materialGearStyle.textContent = '.layout>.panel:first-child .panel-title{display:flex!important;align-items:center!important;gap:5px}.layout>.panel:first-child .panel-title #manageMaterials{position:static!important;width:30px!important;height:30px!important;margin:0 0 0 auto!important;padding:0!important;border:0!important;border-radius:9px!important;background:transparent!important;color:#a1aaa4!important;font-size:18px!important;line-height:1!important;box-shadow:none!important;cursor:pointer!important}.layout>.panel:first-child .panel-title #manageMaterials:hover{background:#f1f4f2!important;color:#637169!important}';
+      materialGearStyle.textContent = '.layout>.panel:first-child .panel-title{display:flex!important;align-items:center!important;gap:5px}.layout>.panel:first-child .panel-title #manageMaterials{position:static!important;display:inline-grid!important;place-items:center!important;align-self:center!important;width:36px!important;height:36px!important;margin:0 0 0 auto!important;padding:0!important;border:0!important;border-radius:11px!important;background:transparent!important;color:#a1aaa4!important;font-size:21px!important;line-height:1!important;box-shadow:none!important;cursor:pointer!important}.layout>.panel:first-child .panel-title #manageMaterials:hover{background:#f1f4f2!important;color:#637169!important}';
       return true;
     };
     if (!positionMaterialManager()) {
