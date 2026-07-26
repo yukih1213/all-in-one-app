@@ -1,15 +1,15 @@
 {
-  "name": "All in One",
-  "short_name": "All in One",
-  "description": "タスク、学習、習慣、日記をひとつにまとめたアプリ",
+  "name": "Hibi",
+  "short_name": "Hibi",
+  "description": "タスク、学習、習慣、日記をひとつにまとめる Hibi",
   "start_url": "./task_manager.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#eef8ff",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "icons": [
     {
-      "src": "./app-icon.svg?v=3",
+      "src": "./app-icon.svg?v=4",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
