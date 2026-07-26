@@ -78,8 +78,12 @@
   const form = document.getElementById('composer');
   const laneSelect = form?.querySelector('select[name="lane"]');
   if (form && laneSelect) {
+    const dueInput = form.querySelector('input[name="due"]');
+    const todayValue = () => { const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+    laneSelect.hidden = true;
+    laneSelect.tabIndex = -1;
+    if (dueInput && !dueInput.value) dueInput.value = todayValue();
     laneSelect.value = 'inbox';
-    form.addEventListener('submit', () => { laneSelect.value = 'inbox'; }, true);
     if (!document.getElementById('sectionInput')) {
       const sectionInput = document.createElement('select');
       sectionInput.id = 'sectionInput';
@@ -87,6 +91,10 @@
       sectionInput.innerHTML = lanes.map(lane => '<option value="'+lane+'">'+labels[lane]+'</option>').join('');
       sectionInput.value = 'inbox';
       form.querySelector('input[name="title"]')?.after(sectionInput);
+      sectionInput.addEventListener('change', () => {
+        laneSelect.value = sectionInput.value;
+        if (dueInput && sectionInput.value === 'now') dueInput.value = todayValue();
+      });
       const sectionCss = document.createElement('style');
       sectionCss.textContent = '#sectionInput{display:inline-block!important;border:1px solid #c2e3ef!important;border-radius:999px!important;background:#eaf7fc!important;color:#39748b!important;padding:9px 11px!important;font-size:12px!important;font-weight:650!important;outline:0}@media(max-width:620px){#sectionInput{order:5}}';
       document.head.append(sectionCss);
@@ -99,12 +107,14 @@
           id:Date.now(), title, lane:sectionInput.value,
           category:form.querySelector('[name="category"]')?.value || '',
           priority:form.querySelector('[name="priority"]')?.value || 'medium',
-          due:form.querySelector('[name="due"]')?.value || '',
+          due:sectionInput.value === 'now' ? todayValue() : (dueInput?.value || todayValue()),
           done:false, spent:0, running:false, started:0
         });
         save();
         form.reset();
         sectionInput.value = 'inbox';
+        laneSelect.value = 'inbox';
+        if (dueInput) dueInput.value = todayValue();
         form.querySelector('[name="priority"]').value = 'medium';
         form.querySelector('[name="category"]').value = '';
         render();

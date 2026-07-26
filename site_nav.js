@@ -15,7 +15,6 @@
       border-radius:10px!important;text-decoration:none!important;font-size:11px!important;
       font-weight:500!important;line-height:1!important;transform:none!important
     }
-    .quick-add-link{display:none!important}
     .page-nav a:not(.current-page),.nav a:not(.current-page){opacity:.38!important;filter:saturate(.65)}
     .page-nav a.current-page,.nav a.current-page{opacity:1!important;filter:none!important;box-shadow:0 4px 12px #1d1d1f14!important}
     .top .page-nav a[href="habit_manager.html"],.top .nav a[href="habit_manager.html"]{background:#ddd5f3!important;color:#5c5278!important}
@@ -27,25 +26,21 @@
     @media(max-width:700px){
       .app{padding:32px 18px 56px!important}
       .top .page-nav,.top .nav{position:static!important;justify-content:flex-start!important;margin-top:10px!important;overflow-x:auto!important;max-width:100%!important}
-      .quick-add-link{display:inline-flex!important;background:#e4f4fb!important;color:#39748b!important}
     }
   `;
   document.head.append(style);
   if (current === 'study_time.html') document.body.classList.add('study-gradient-page');
   if (current === 'habit_manager.html') document.body.classList.add('habit-gradient-page');
+  if (current === 'habit_manager.html') {
+    const reminderSetting = document.getElementById('habitReminder')?.closest('label');
+    if (reminderSetting) reminderSetting.style.display = 'none';
+  }
   document.querySelectorAll('.page-nav,.nav').forEach(nav => {
     if (!nav.querySelector('a[href="habit_manager.html"]')) {
       const link = document.createElement('a');
       link.href = 'habit_manager.html';
       link.textContent = '習慣';
       link.className = 'habit-page-link';
-      nav.append(link);
-    }
-    if (window.matchMedia('(max-width:700px)').matches && !nav.querySelector('a[href="quick_add.html"]')) {
-      const link = document.createElement('a');
-      link.href = 'quick_add.html';
-      link.textContent = 'クイック追加';
-      link.className = 'quick-add-link';
       nav.append(link);
     }
     ['task_manager.html', 'study_time.html', 'habit_manager.html', 'reports.html'].forEach(href => {
@@ -65,7 +60,7 @@
     refreshCategories = refreshOnly;
     refreshOnly();
     categoryInput.value = customCategories[0]?.[0] || '';
-    if (addCategory) { addCategory.style.cssText += ';display:inline-flex!important;align-items:center;justify-content:center'; }
+    if (addCategory) addCategory.remove();
   }
   if (current === 'study_time.html') {
     const hours = document.getElementById('hours');
