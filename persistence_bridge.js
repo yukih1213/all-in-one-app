@@ -1,5 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js';
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, getRedirectResult, signInWithPopup, signInWithRedirect, signOut, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js';
 
 const app = initializeApp({
@@ -18,6 +18,15 @@ try {
   console.error('Firebase authentication persistence could not be enabled.', error);
 }
 const db = getFirestore(app);
+
+// モバイルのリダイレクトログインでは、戻ってきた直後に結果を明示的に
+// 確認しておくと、認証状態の反映漏れやエラーを画面に出せます。
+try {
+  await getRedirectResult(auth);
+} catch (error) {
+  console.error('Firebase redirect sign-in failed.', error);
+  queueMicrotask(() => showStatus(loginErrorMessage(error), true));
+}
 const keys = [
   'kanban-tasks-v2', 'kanban-categories-v1', 'kanban-category-colors-v1',
   'kanban-category-names-v1', 'kanban-reports-v1', 'kanban-reflections-v1',
