@@ -5,11 +5,11 @@
   "start_url": "./task_manager.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#ffffff",
+  "theme_color": "#fff7ef",
   "icons": [
     {
-      "src": "./app-icon.svg?v=4",
+      "src": "./app-icon.svg?v=5",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
