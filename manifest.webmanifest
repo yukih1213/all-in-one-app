@@ -1,0 +1,18 @@
+{
+  "name": "All in One",
+  "short_name": "All in One",
+  "description": "タスク、学習、習慣、日記をひとつにまとめたアプリ",
+  "start_url": "./task_manager.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7faf8",
+  "theme_color": "#79b8cf",
+  "icons": [
+    {
+      "src": "./app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

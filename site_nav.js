@@ -1,4 +1,7 @@
 (() => {
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(console.error), {once:true});
+  }
   const current = location.pathname.split('/').filter(Boolean).pop() || 'task_manager.html';
   const style = document.createElement('style');
   style.textContent = `

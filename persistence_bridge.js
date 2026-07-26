@@ -1,5 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js';
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js';
 
 const app = initializeApp({
@@ -12,6 +12,11 @@ const app = initializeApp({
 });
 
 const auth = getAuth(app);
+try {
+  await setPersistence(auth, browserLocalPersistence);
+} catch (error) {
+  console.error('Firebase authentication persistence could not be enabled.', error);
+}
 const db = getFirestore(app);
 const keys = [
   'kanban-tasks-v2', 'kanban-categories-v1', 'kanban-category-colors-v1',
