@@ -13,6 +13,7 @@
           <button data-timer-tab="pomodoro">セットタイマー</button>
         </div>
         <button id="studyTimerExpand" class="study-timer-expand" type="button">拡大</button>
+        <button id="studyNotification" class="study-timer-expand" type="button">通知を許可</button>
       </div>
     </div>
     <div id="timerMaterial" class="timer-material" aria-live="polite"></div>
@@ -64,6 +65,8 @@
   let audioContext = null, alarmInterval = null, ringProgressOverride = null, ringPhaseOverride = null, currentAlarmKind = null, extensionDuration = null;
   const materialTimerKey = 'study-timer-material-v1';
   const materialRemainderKey = 'study-timer-remainders-v1';
+  const sharedTimerKey = 'hibi-study-timer-v1';
+  let pomoDeadline = 0, lastPomoTick = Date.now();
   let activeMaterialId = localStorage.getItem(materialTimerKey) || state?.materials?.[0]?.id || '';
   let materialRemainders = JSON.parse(localStorage.getItem(materialRemainderKey) || '{}');
   let capturedStopwatch = 0, capturedPomodoro = 0;
@@ -142,6 +145,31 @@
     breakMinutes = Math.min(60, Math.max(1, Number(document.getElementById('studyBreakMinutes').value) || 5));
     targetSets = Math.min(20, Math.max(1, Number(document.getElementById('studySetCount').value) || 1));
   }
+  function saveSharedTimer() {
+    localStorage.setItem(sharedTimerKey, JSON.stringify({
+      running:pomoRunning, deadline:pomoDeadline, phase:pomoPhase, remaining:pomoRemaining,
+      started:pomoStarted, workSeconds:pomoWorkSeconds, currentSet, targetSets,
+      workMinutes, breakMinutes, updatedAt:Date.now()
+    }));
+  }
+  function restoreSharedTimer() {
+    let saved;
+    try { saved=JSON.parse(localStorage.getItem(sharedTimerKey)||'null'); } catch (_) { return false; }
+    if (!saved || !saved.updatedAt) return false;
+    pomoPhase=saved.phase||'work'; pomoStarted=!!saved.started; pomoWorkSeconds=Number(saved.workSeconds)||0;
+    currentSet=Number(saved.currentSet)||1; targetSets=Number(saved.targetSets)||4;
+    workMinutes=Number(saved.workMinutes)||25; breakMinutes=Number(saved.breakMinutes)||5;
+    pomoDeadline=Number(saved.deadline)||0; pomoRunning=!!saved.running;
+    if (pomoRunning && pomoPhase==='work') pomoWorkSeconds+=Math.max(0,Math.min(Number(saved.remaining)||0,Math.floor((Date.now()-Number(saved.updatedAt))/1000)));
+    pomoRemaining=pomoRunning&&pomoDeadline ? Math.max(0,Math.ceil((pomoDeadline-Date.now())/1000)) : Math.max(0,Number(saved.remaining)||0);
+    document.getElementById('studyWorkMinutes').value=workMinutes;
+    document.getElementById('studyBreakMinutes').value=breakMinutes;
+    document.getElementById('studySetCount').value=targetSets;
+    unlockSettings(!pomoStarted);
+    lastPomoTick=Date.now();
+    if (pomoRunning && pomoRemaining===0) nextPhase();
+    return true;
+  }
   function unlockSettings(unlocked) { settingInputs.forEach(input => input.disabled = !unlocked); }
   function prepareAudio() {
     try {
@@ -175,7 +203,9 @@
     ringProgressOverride = null;
     ringPhaseOverride = null;
     document.getElementById('studyAlarm').classList.remove('active');
-    if (resumeNextPhase && pomoPhase !== 'complete') pomoRunning = true;
+    if (resumeNextPhase && pomoPhase !== 'complete') { pomoRunning = true; pomoDeadline=Date.now()+pomoRemaining*1000; lastPomoTick=Date.now(); }
+    window.HibiTimerBridge?.stopAlarm();
+    saveSharedTimer();
     drawPomodoro();
   }
   function startAlarm(kind, message) {
@@ -189,6 +219,7 @@
     document.getElementById('studyAlarm').classList.add('active');
     ring(kind);
     alarmInterval = setInterval(() => ring(kind), 1400);
+    saveSharedTimer();
   }
   function drawStopwatch() {
     const total = stopwatchTotal();
@@ -217,8 +248,10 @@
     pomoWorkSeconds = 0;
     extensionDuration = null;
     currentSet = 1;
+    pomoDeadline = 0;
     unlockSettings(true);
     drawPomodoro();
+    saveSharedTimer();
   }
   function nextPhase() {
     extensionDuration = null;
@@ -541,6 +574,9 @@
     if (pomoPhase === 'complete') resetPomodoro();
     if (!pomoStarted) { readSettings(); pomoRemaining = workMinutes * 60; pomoStarted = true; unlockSettings(false); }
     pomoRunning = !pomoRunning;
+    if (pomoRunning) { pomoDeadline=Date.now()+pomoRemaining*1000; lastPomoTick=Date.now(); }
+    else pomoDeadline=0;
+    saveSharedTimer();
     drawPomodoro();
   };
   document.getElementById('studyPomoReset').onclick = resetPomodoro;
@@ -562,6 +598,9 @@
       extensionDuration = 3 * 60;
     }
     pomoRunning = true;
+    pomoDeadline=Date.now()+pomoRemaining*1000;
+    lastPomoTick=Date.now();
+    saveSharedTimer();
     drawPomodoro();
   };
   ['stopwatchReset','studyPomoReset'].forEach(id => document.getElementById(id)?.addEventListener('click', () => {
@@ -605,11 +644,12 @@
   setInterval(() => {
     drawStopwatch();
     if (!pomoRunning) return;
-    if (pomoRemaining > 0) {
-      pomoRemaining--;
-      if (pomoPhase === 'work') pomoWorkSeconds++;
-    }
+    const now=Date.now(),previousRemaining=pomoRemaining;
+    pomoRemaining=Math.max(0,Math.ceil((pomoDeadline-now)/1000));
+    if (pomoPhase==='work') pomoWorkSeconds+=Math.max(0,previousRemaining-pomoRemaining);
+    lastPomoTick=now;
     if (pomoRemaining === 0) nextPhase();
+    saveSharedTimer();
     drawPomodoro();
   }, 1000);
 
@@ -622,9 +662,15 @@
   }, 1000);
 
   drawStopwatch();
-  resetPomodoro();
+  if (!restoreSharedTimer()) resetPomodoro(); else drawPomodoro();
   ensureActiveMaterial();
   capturedStopwatch = stopwatchTotal();
   capturedPomodoro = pomoWorkSeconds;
   paintSelectedMaterial();
+  const notificationButton=document.getElementById('studyNotification');
+  if (notificationButton) {
+    const paintNotification=()=>{notificationButton.textContent=!('Notification' in window)?'通知非対応':Notification.permission==='granted'?'通知オン':Notification.permission==='denied'?'通知は設定で拒否中':'通知を許可';notificationButton.disabled=!('Notification' in window)||Notification.permission==='denied'};
+    notificationButton.onclick=async()=>{window.HibiTimerBridge?.unlockAudio();await window.HibiTimerBridge?.requestPermission();paintNotification()};
+    paintNotification();
+  }
 })();
