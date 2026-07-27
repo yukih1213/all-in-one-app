@@ -571,6 +571,8 @@
     legacyWeekRoot.replaceWith(weekRoot);
     document.getElementById('weekHeightToggle')?.remove();
     const weeklyTitle = weeklySection.querySelector('.weekly-title');
+    // 既存の「今週のタスク」は、週次/月次の切り替え見出しに置き換える。
+    weeklyTitle.textContent = '';
     viewToggle = document.createElement('span');
     viewToggle.className = 'calendar-view-toggle';
     viewToggle.innerHTML = '<button type="button" data-view="weekly">週次カレンダー</button><button type="button" data-view="monthly">月次カレンダー</button>';
@@ -1032,7 +1034,8 @@
     function syncBoardAndCalendarView() {
       const shouldShow = calendarOpen;
       if (calendarMode) {
-        if (weeklySection) weeklySection.style.display = 'none';
+        // 月次表示でも切り替え見出しは残し、週次へ戻れるようにする。
+        if (weeklySection) weeklySection.style.display = '';
         if (weekRoot) weekRoot.classList.remove('open');
         calView.style.display = shouldShow ? 'block' : 'none';
         if (hintEl) hintEl.style.display = 'none';
