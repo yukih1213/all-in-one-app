@@ -1045,7 +1045,9 @@
         }
         if (shouldShow) renderTaskCalendar();
       } else {
-        if (weeklySection) weeklySection.style.display = shouldShow ? '' : 'none';
+        // 閉じている間も見出しと「カレンダーを開く」は残す。
+        // 週次ボード本体だけを開閉しないと、再表示する操作ができなくなる。
+        if (weeklySection) weeklySection.style.display = '';
         if (weekRoot) weekRoot.classList.toggle('open', shouldShow);
         calView.style.display = 'none';
         if (hintEl) hintEl.style.display = '';
