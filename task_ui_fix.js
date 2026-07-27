@@ -292,6 +292,7 @@
       if (overdue && task.lane !== 'overdue') {
         task.laneBeforeOverdue = task.lane;
         task.lane = 'overdue';
+        task.wasOverdue = true;
         changed = true;
       } else if (!overdue && task.lane === 'overdue') {
         task.lane = task.laneBeforeOverdue || 'inbox';
@@ -326,17 +327,33 @@
       if (label) label.textContent = '⏱ ' + time(total);
     });
   }
+  function preserveOverdueLabels() {
+    document.querySelectorAll('.task').forEach(card => {
+      const task = tasks.find(item => String(item.id) === String(card.dataset.id));
+      if (!task) return;
+      const due = card.querySelector('.due');
+      if (!due) return;
+      const overdue = task.wasOverdue || task.lane === 'overdue';
+      due.classList.toggle('overdue', overdue);
+      if (overdue) {
+        const dateText = task.due ? date(task.due) : '';
+        due.textContent = dateText ? `期限切れ · ${dateText}` : '期限切れ';
+      }
+    });
+  }
   render = function() {
     syncOverdueTasks();
     prioritySort();
     const nextKey = renderKey();
     if (nextKey === lastRenderKey && tasks.some(task => task.running)) {
       refreshRunningTimes();
+      preserveOverdueLabels();
       return;
     }
     baseRender();
     lastRenderKey = renderKey();
     updateSectionLayout();
+    preserveOverdueLabels();
   };
   syncOverdueTasks();
   prioritySort();

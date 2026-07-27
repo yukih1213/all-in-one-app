@@ -424,6 +424,22 @@
     if (!log) return;
     globalThis.selectedLogId = String(log.id);
     editingLogId = log.id;
+    const legacyModal = document.getElementById('logEditModal');
+    if (legacyModal && document.getElementById('editLogId')) {
+      document.getElementById('editLogId').value = log.id;
+      document.getElementById('editMaterialSelect').innerHTML = state.materials.map(material => '<option value="'+material.id+'">'+esc(material.name)+'</option>').join('');
+      document.getElementById('editMaterialSelect').value = log.materialId;
+      document.getElementById('editLogDate').value = log.date;
+      document.getElementById('editStartTime').value = log.startTime || '';
+      document.getElementById('editEndTime').value = log.endTime || '';
+      document.getElementById('editPauseMinutes').value = log.pauseMinutes || 0;
+      document.getElementById('editHours').value = Math.floor(Number(log.minutes || 0) / 60);
+      document.getElementById('editMinutes').value = Number(log.minutes || 0) % 60;
+      document.getElementById('editNote').value = log.note || '';
+      legacyModal.style.display = 'flex';
+      render();
+      return;
+    }
     document.getElementById('editLogMaterial').innerHTML = state.materials.map(material => '<option value="'+material.id+'">'+esc(material.name)+'</option>').join('');
     document.getElementById('editLogMaterial').value = log.materialId;
     document.getElementById('editLogDate').value = log.date;
