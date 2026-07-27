@@ -1,4 +1,5 @@
 (() => {
+  // UI revision 2026-07-27-b: keep calendar view controls available in both modes.
   if (window.__taskUiFixLoaded) return;
   window.__taskUiFixLoaded = true;
   const style = document.createElement('style');
