@@ -707,3 +707,18 @@
     paintNotification();
   }
 })();
+
+// タイムラインと最近の記録を、教材を問わず同じログIDで同期して強調表示する。
+(function(){
+  const style = document.createElement('style');
+  style.textContent = '#timeline24 .timeline-log.selected-log{z-index:3;box-shadow:0 0 0 2px #fff,0 0 0 4px var(--log-color,#4e9b70),0 3px 8px #26332c22!important;opacity:1!important}';
+  document.head.append(style);
+  function sync(){
+    const id = String(globalThis.selectedLogId || '');
+    document.querySelectorAll('#timeline24 [data-log-id]').forEach(node => node.classList.toggle('timeline-log', true));
+    document.querySelectorAll('#timeline24 [data-log-id],#logs [data-log-id]').forEach(node => node.classList.toggle('selected-log', !!id && String(node.dataset.logId) === id));
+  }
+  new MutationObserver(sync).observe(document.body,{childList:true,subtree:true});
+  setInterval(sync,250);
+  sync();
+})();

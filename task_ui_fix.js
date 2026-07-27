@@ -561,6 +561,8 @@
   let weekRoot = null;
   let weekSizeButton = null;
   let calendarMode = false;
+  let calendarOpen = true;
+  let viewToggle = null;
   if (weeklySection && legacyWeekRoot) {
     legacyWeekRoot.id = 'weekColumnsDisabled';
     weekRoot = document.createElement('div');
@@ -569,8 +571,12 @@
     legacyWeekRoot.replaceWith(weekRoot);
     document.getElementById('weekHeightToggle')?.remove();
     const weeklyTitle = weeklySection.querySelector('.weekly-title');
+    viewToggle = document.createElement('span');
+    viewToggle.className = 'calendar-view-toggle';
+    viewToggle.innerHTML = '<button type="button" data-view="weekly">週次カレンダー</button><button type="button" data-view="monthly">月次カレンダー</button>';
+    weeklyTitle.prepend(viewToggle);
     weekSizeButton = document.createElement('button');
-    weekSizeButton.textContent = '週次カレンダー';
+    weekSizeButton.textContent = 'カレンダーを閉じる';
     weekSizeButton.className = 'week-size-toggle';
     weeklyTitle.append(weekSizeButton);
     const weeklyCss = document.createElement('style');
@@ -578,7 +584,10 @@
       .weekly-title{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:8px!important}
       .week-size-toggle{padding:7px 11px;border:1px solid #d4d5d8;border-radius:9px;background:#eeeeef;color:#1d1d1f;font-size:11px;font-weight:700;box-shadow:0 2px 7px #1d1d1f0d;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease,background .15s ease}
       .week-size-toggle:hover{background:#e2e2e4}
-      .week-size-toggle.calendar-active{transform:scale(1.08);box-shadow:0 6px 16px #1d1d1f15;background:#e4f4fb;color:#39748b;border-color:#c7e5f1}
+      .calendar-view-toggle{display:inline-flex;align-items:center;gap:8px;margin-left:2px}
+      .calendar-view-toggle button{order:1;padding:0;border:0;background:transparent;color:#aaa4b0;font-size:12px;font-weight:650;cursor:pointer}
+      .calendar-view-toggle button.active{order:0;color:#3f3a46;font-size:15px;font-weight:780}
+      .calendar-view-toggle button:hover{color:#39748b}
       .weekly-board{display:none!important}
       .weekly-board.open{display:grid!important;align-items:stretch!important}
       .weekly-board .week-day{height:auto!important;min-height:138px!important;max-height:none!important;overflow:visible!important}
@@ -1021,33 +1030,40 @@
     const boardEl = document.getElementById('board');
     const hintEl = document.querySelector('.hint');
     function syncBoardAndCalendarView() {
+      const shouldShow = calendarOpen;
       if (calendarMode) {
         if (weeklySection) weeklySection.style.display = 'none';
         if (weekRoot) weekRoot.classList.remove('open');
-        calView.style.display = 'block';
+        calView.style.display = shouldShow ? 'block' : 'none';
         if (hintEl) hintEl.style.display = 'none';
         if (weekSizeButton) {
-          weekSizeButton.textContent = '週次カレンダー';
-          weekSizeButton.classList.add('calendar-active');
+          weekSizeButton.textContent = calendarOpen ? 'カレンダーを閉じる' : 'カレンダーを開く';
         }
-        renderTaskCalendar();
+        if (shouldShow) renderTaskCalendar();
       } else {
-        if (weeklySection) weeklySection.style.display = '';
-        if (weekRoot) weekRoot.classList.add('open');
+        if (weeklySection) weeklySection.style.display = shouldShow ? '' : 'none';
+        if (weekRoot) weekRoot.classList.toggle('open', shouldShow);
         calView.style.display = 'none';
         if (hintEl) hintEl.style.display = '';
         if (weekSizeButton) {
-          weekSizeButton.textContent = '週次カレンダー';
-          weekSizeButton.classList.remove('calendar-active');
+          weekSizeButton.textContent = calendarOpen ? 'カレンダーを閉じる' : 'カレンダーを開く';
         }
       }
+      viewToggle.querySelectorAll('button').forEach(button => button.classList.toggle('active', (button.dataset.view === 'monthly') === calendarMode));
     }
     if (weekSizeButton) {
       weekSizeButton.onclick = () => {
-        calendarMode = !calendarMode;
+        calendarOpen = !calendarOpen;
         syncBoardAndCalendarView();
       };
     }
+    viewToggle.querySelectorAll('button').forEach(button => {
+      button.onclick = () => {
+        calendarMode = button.dataset.view === 'monthly';
+        calendarOpen = true;
+        syncBoardAndCalendarView();
+      };
+    });
     syncBoardAndCalendarView();
   })();
 })();
