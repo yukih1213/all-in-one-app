@@ -1023,6 +1023,7 @@
     function syncBoardAndCalendarView() {
       if (calendarMode) {
         if (weeklySection) weeklySection.style.display = 'none';
+        if (weekRoot) weekRoot.classList.remove('open');
         calView.style.display = 'block';
         if (hintEl) hintEl.style.display = 'none';
         if (weekSizeButton) {
@@ -1032,6 +1033,7 @@
         renderTaskCalendar();
       } else {
         if (weeklySection) weeklySection.style.display = '';
+        if (weekRoot) weekRoot.classList.add('open');
         calView.style.display = 'none';
         if (hintEl) hintEl.style.display = '';
         if (weekSizeButton) {
