@@ -557,25 +557,43 @@
 
   const weeklySection = document.getElementById('weeklyBoard');
   const legacyWeekRoot = document.getElementById('weekColumns');
+  let weekRoot = null;
+  let weekSizeButton = null;
+  let calendarMode = false;
   if (weeklySection && legacyWeekRoot) {
     legacyWeekRoot.id = 'weekColumnsDisabled';
-    const weekRoot = document.createElement('div');
+    weekRoot = document.createElement('div');
     weekRoot.id = 'interactiveWeekColumns';
     weekRoot.className = 'weekly-board';
     legacyWeekRoot.replaceWith(weekRoot);
     document.getElementById('weekHeightToggle')?.remove();
     const weeklyTitle = weeklySection.querySelector('.weekly-title');
-    const sizeButton = document.createElement('button');
-    sizeButton.textContent = '今週を表示';
-    sizeButton.className = 'week-size-toggle';
-    weeklyTitle.append(sizeButton);
+    weekSizeButton = document.createElement('button');
+    weekSizeButton.textContent = '週次カレンダー';
+    weekSizeButton.className = 'week-size-toggle';
+    weeklyTitle.append(weekSizeButton);
     const weeklyCss = document.createElement('style');
-    weeklyCss.textContent = '.weekly-title{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:8px!important}.week-size-toggle{padding:7px 11px;border:1px solid #d4d5d8;border-radius:9px;background:#eeeeef;color:#1d1d1f;font-size:11px;font-weight:700;box-shadow:0 2px 7px #1d1d1f0d;cursor:pointer}.week-size-toggle:hover{background:#e2e2e4}.weekly-board{display:none!important}.weekly-board.open{display:grid!important;align-items:stretch!important}.weekly-board .week-day{height:auto!important;min-height:138px!important;max-height:none!important;overflow:visible!important}.week-day>div:first-child{position:sticky;top:-9px;z-index:2;margin:-9px -9px 3px;padding:9px;background:#e9e9ec;border-radius:15px 15px 0 0}.week-day.today>div:first-child{background:#e2f3fa}.week-task{display:grid!important;grid-template-columns:22px minmax(0,1fr)!important;gap:7px!important;align-items:start!important;cursor:grab;user-select:none}.week-task.dragging{opacity:.45}.week-check{display:grid;place-items:center;width:22px;height:22px;margin-top:0;padding:0;border:1.5px solid #b8bbc1;border-radius:50%;background:#fff;color:#fff;font-size:14px;font-weight:800;line-height:1;transition:transform .16s ease,box-shadow .16s ease}.week-check.check-completing{background:#397f9a;border-color:#397f9a;box-shadow:0 3px 8px #397f9a44}.week-card-title{font-size:11px;line-height:1.35;word-break:break-word}.week-card-meta{display:flex;align-items:center;gap:5px;margin-top:5px;font-size:9px;color:#777}.week-card-category{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:2px 5px;border-radius:5px}.week-day.week-drop{box-shadow:inset 0 0 0 2px #69b3d1;background:#e8f5fa!important}';
+    weeklyCss.textContent = `
+      .weekly-title{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:8px!important}
+      .week-size-toggle{padding:7px 11px;border:1px solid #d4d5d8;border-radius:9px;background:#eeeeef;color:#1d1d1f;font-size:11px;font-weight:700;box-shadow:0 2px 7px #1d1d1f0d;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease,background .15s ease}
+      .week-size-toggle:hover{background:#e2e2e4}
+      .week-size-toggle.calendar-active{transform:scale(1.08);box-shadow:0 6px 16px #1d1d1f15;background:#e4f4fb;color:#39748b;border-color:#c7e5f1}
+      .weekly-board{display:none!important}
+      .weekly-board.open{display:grid!important;align-items:stretch!important}
+      .weekly-board .week-day{height:auto!important;min-height:138px!important;max-height:none!important;overflow:visible!important}
+      .week-day>div:first-child{position:sticky;top:-9px;z-index:2;margin:-9px -9px 3px;padding:9px;background:#e9e9ec;border-radius:15px 15px 0 0}
+      .week-day.today>div:first-child{background:#e2f3fa}
+      .week-task{display:grid!important;grid-template-columns:22px minmax(0,1fr)!important;gap:7px!important;align-items:start!important;cursor:grab;user-select:none}
+      .week-task.dragging{opacity:.45}
+      .week-check{display:grid;place-items:center;width:22px;height:22px;margin-top:0;padding:0;border:1.5px solid #b8bbc1;border-radius:50%;background:#fff;color:#fff;font-size:14px;font-weight:800;line-height:1;transition:transform .16s ease,box-shadow .16s ease}
+      .week-check.check-completing{background:#397f9a;border-color:#397f9a;box-shadow:0 3px 8px #397f9a44}
+      .week-card-title{font-size:11px;line-height:1.35;word-break:break-word}
+      .week-card-meta{display:flex;align-items:center;gap:5px;margin-top:5px;font-size:9px;color:#777}
+      .week-card-category{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:2px 5px;border-radius:5px}
+      .week-day.week-drop{box-shadow:inset 0 0 0 2px #69b3d1;background:#e8f5fa!important}
+      .task-calendar-drop{outline:2px solid #69b3d1;outline-offset:-2px;background:#e8f5fa!important}
+    `;
     document.head.append(weeklyCss);
-    sizeButton.onclick = () => {
-      const open = weekRoot.classList.toggle('open');
-      sizeButton.textContent = open ? '今週を隠す' : '今週を表示';
-    };
     let weeklyDragId = null;
     function weekIso(date) { return new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,10); }
     function drawInteractiveWeek() {
@@ -912,21 +930,12 @@
 
   updateHistoryButtons();
 
-  // --- カレンダービュー機能 ＆ タスク表示切り替え ---
+  // --- 月次カレンダー表示 ---
   (function(){
-    const titleEl = document.getElementById('taskBoardSectionTitle');
-    if (!titleEl) return;
-
-    const viewSwitch = document.createElement('div');
-    viewSwitch.className = 'task-view-switch';
-    viewSwitch.style.cssText = 'display:inline-flex;gap:4px;margin-left:14px;padding:3px;background:#e2e9ee;border-radius:9px;vertical-align:middle;font-size:11px;font-weight:600';
-    viewSwitch.innerHTML = '<button id="viewBtnBoard" class="active" style="padding:4px 9px;border:0;border-radius:7px;background:#fff;color:#477f98;cursor:pointer;box-shadow:0 1px 4px #0002">ボード</button><button id="viewBtnCal" style="padding:4px 9px;border:0;border-radius:7px;background:transparent;color:#75848c;cursor:pointer">カレンダー</button>';
-    titleEl.append(viewSwitch);
-
     const calView = document.createElement('div');
     calView.id = 'taskCalendarView';
     calView.style.cssText = 'display:none;margin-bottom:28px;background:#fff;border-radius:18px;padding:18px;box-shadow:0 12px 32px #1d1d1f0d;border:1px solid #e0e5e0';
-    document.getElementById('board')?.before(calView);
+    weeklySection?.after(calView);
 
     let calDate = new Date();
 
@@ -964,11 +973,11 @@
         const dayTasks = tasks.filter(t => t.due === curIso);
         const isToday = curIso === todayStr;
 
-        html += `<div style="min-height:80px;padding:6px;background:${isToday ? '#e8f4ec' : '#f9faf9'};border:1px solid ${isToday ? '#4e9b70' : '#eef2ee'};border-radius:10px">
+        html += `<div class="task-calendar-cell" data-date="${curIso}" draggable="false" style="min-height:80px;padding:6px;background:${isToday ? '#e8f4ec' : '#f9faf9'};border:1px solid ${isToday ? '#4e9b70' : '#eef2ee'};border-radius:10px">
           <div style="font-size:11px;font-weight:700;margin-bottom:4px;color:${isToday ? '#4e9b70' : '#333'}">${d}</div>
           <div style="display:flex;flex-direction:column;gap:3px">`;
         dayTasks.forEach(t => {
-          html += `<div style="padding:3px 6px;border-radius:6px;background:#fff;font-size:10px;line-height:1.2;color:#333;box-shadow:0 1px 3px rgba(0,0,0,0.06);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${t.done ? 'text-decoration:line-through;opacity:0.6' : ''}" title="${esc(t.title)}">${esc(t.title)}</div>`;
+          html += `<div class="task-calendar-item" data-task-id="${t.id}" draggable="true" style="padding:3px 6px;border-radius:6px;background:#fff;font-size:10px;line-height:1.2;color:#333;box-shadow:0 1px 3px rgba(0,0,0,0.06);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${t.done ? 'text-decoration:line-through;opacity:0.6' : ''}" title="${esc(t.title)}">${esc(t.title)}</div>`;
         });
         html += `</div></div>`;
       }
@@ -979,28 +988,63 @@
       document.getElementById('calPrev').onclick = () => { calDate.setMonth(calDate.getMonth() - 1); renderTaskCalendar(); };
       document.getElementById('calToday').onclick = () => { calDate = new Date(); renderTaskCalendar(); };
       document.getElementById('calNext').onclick = () => { calDate.setMonth(calDate.getMonth() + 1); renderTaskCalendar(); };
+
+      calView.querySelectorAll('.task-calendar-item').forEach(item => {
+        item.ondragstart = event => {
+          event.dataTransfer?.setData('text/plain', String(item.dataset.taskId));
+          event.dataTransfer && (event.dataTransfer.effectAllowed = 'move');
+          item.style.opacity = '0.5';
+        };
+        item.ondragend = () => {
+          item.style.opacity = '';
+          calView.querySelectorAll('.task-calendar-drop').forEach(node => node.classList.remove('task-calendar-drop'));
+        };
+      });
+      calView.querySelectorAll('.task-calendar-cell').forEach(cell => {
+        cell.ondragover = event => { event.preventDefault(); cell.classList.add('task-calendar-drop'); };
+        cell.ondragleave = event => { if (!cell.contains(event.relatedTarget)) cell.classList.remove('task-calendar-drop'); };
+        cell.ondrop = event => {
+          event.preventDefault();
+          cell.classList.remove('task-calendar-drop');
+          const taskId = Number(event.dataTransfer?.getData('text/plain') || 0);
+          const task = tasks.find(item => item.id === taskId);
+          if (!task) return;
+          task.due = cell.dataset.date;
+          save();
+          render();
+          renderTaskCalendar();
+        };
+      });
     }
 
-    const btnBoard = document.getElementById('viewBtnBoard');
-    const btnCal = document.getElementById('viewBtnCal');
     const boardEl = document.getElementById('board');
     const hintEl = document.querySelector('.hint');
-
-    btnBoard.onclick = () => {
-      btnBoard.classList.add('active'); btnBoard.style.background='#fff'; btnBoard.style.color='#477f98';
-      btnCal.classList.remove('active'); btnCal.style.background='transparent'; btnCal.style.color='#75848c';
-      calView.style.display = 'none';
-      if (boardEl) boardEl.style.display = '';
-      if (hintEl) hintEl.style.display = '';
-    };
-
-    btnCal.onclick = () => {
-      btnCal.classList.add('active'); btnCal.style.background='#fff'; btnCal.style.color='#477f98';
-      btnBoard.classList.remove('active'); btnBoard.style.background='transparent'; btnBoard.style.color='#75848c';
-      if (boardEl) boardEl.style.display = 'none';
-      if (hintEl) hintEl.style.display = 'none';
-      calView.style.display = 'block';
-      renderTaskCalendar();
-    };
+    function syncBoardAndCalendarView() {
+      if (calendarMode) {
+        if (weeklySection) weeklySection.style.display = 'none';
+        calView.style.display = 'block';
+        if (hintEl) hintEl.style.display = 'none';
+        if (weekSizeButton) {
+          weekSizeButton.textContent = '週次カレンダー';
+          weekSizeButton.classList.add('calendar-active');
+        }
+        renderTaskCalendar();
+      } else {
+        if (weeklySection) weeklySection.style.display = '';
+        calView.style.display = 'none';
+        if (hintEl) hintEl.style.display = '';
+        if (weekSizeButton) {
+          weekSizeButton.textContent = '週次カレンダー';
+          weekSizeButton.classList.remove('calendar-active');
+        }
+      }
+    }
+    if (weekSizeButton) {
+      weekSizeButton.onclick = () => {
+        calendarMode = !calendarMode;
+        syncBoardAndCalendarView();
+      };
+    }
+    syncBoardAndCalendarView();
   })();
 })();
