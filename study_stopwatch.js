@@ -65,6 +65,7 @@
   let audioContext = null, alarmInterval = null, ringProgressOverride = null, ringPhaseOverride = null, currentAlarmKind = null, extensionDuration = null;
   const materialTimerKey = 'study-timer-material-v1';
   const materialRemainderKey = 'study-timer-remainders-v1';
+  const materialLiveKey = 'study-timer-live-active-v1';
   const sharedTimerKey = 'hibi-study-timer-v1';
   let pomoDeadline = 0, lastPomoTick = Date.now();
   let activeMaterialId = localStorage.getItem(materialTimerKey) || state?.materials?.[0]?.id || '';
@@ -80,7 +81,18 @@
     if (activeMaterialId) localStorage.setItem(materialTimerKey, activeMaterialId);
   }
   function timerTotals() { return {stopwatch:stopwatchTotal(), pomodoro:pomoWorkSeconds}; }
-  function captureMaterialTime() {
+  function isTimingActive() {
+    return stopwatchRunning || pomoRunning;
+  }
+  function syncLiveFlag() {
+    localStorage.setItem(materialLiveKey, isTimingActive() ? '1' : '0');
+  }
+  function captureMaterialTime(force = false) {
+    if (!force && !isTimingActive()) {
+      capturedStopwatch = stopwatchTotal();
+      capturedPomodoro = pomoWorkSeconds;
+      return;
+    }
     ensureActiveMaterial();
     const totals = timerTotals();
     const delta = Math.max(0, totals.stopwatch - capturedStopwatch) + Math.max(0, totals.pomodoro - capturedPomodoro);
@@ -141,12 +153,14 @@
   }
   function selectMaterial(materialId) {
     if (!materialId || materialId === activeMaterialId) return;
-    if ((stopwatchRunning || pomoRunning) && !window.confirm('タイマーを計測中です。教材を変更しますか？\n変更前までの時間は現在の教材へ自動保存されます。')) {
+    if (isTimingActive() && !window.confirm('タイマーを計測中です。教材を変更しますか？\n変更前までの時間は現在の教材へ自動保存されます。')) {
       paintSelectedMaterial();
       return;
     }
-    captureMaterialTime();
-    flushMaterial(activeMaterialId);
+    if (isTimingActive()) {
+      captureMaterialTime(true);
+      flushMaterial(activeMaterialId);
+    }
     activeMaterialId = materialId;
     localStorage.setItem(materialTimerKey, activeMaterialId);
     capturedStopwatch = stopwatchTotal();
@@ -210,18 +224,19 @@
       oscillator.stop(start + .2);
     });
   }
-  function stopAlarm(resumeNextPhase = false) {
+	  function stopAlarm(resumeNextPhase = false) {
     if (alarmInterval) clearInterval(alarmInterval);
     alarmInterval = null;
     currentAlarmKind = null;
     ringProgressOverride = null;
     ringPhaseOverride = null;
     document.getElementById('studyAlarm').classList.remove('active');
-    if (resumeNextPhase && pomoPhase !== 'complete') { pomoRunning = true; pomoDeadline=Date.now()+pomoRemaining*1000; lastPomoTick=Date.now(); }
-    window.HibiTimerBridge?.stopAlarm();
-    saveSharedTimer();
-    drawPomodoro();
-  }
+	    if (resumeNextPhase && pomoPhase !== 'complete') { pomoRunning = true; pomoDeadline=Date.now()+pomoRemaining*1000; lastPomoTick=Date.now(); }
+	    window.HibiTimerBridge?.stopAlarm();
+	    syncLiveFlag();
+	    saveSharedTimer();
+	    drawPomodoro();
+	  }
   function startAlarm(kind, message) {
     stopAlarm(false);
     pomoRunning = false;
@@ -230,8 +245,9 @@
     ringPhaseOverride = kind === 'breakEnd' ? 'break' : 'work';
     document.getElementById('studyAlarmMessage').textContent = message;
     document.getElementById('studyAlarmExtend').textContent = kind === 'breakEnd' ? '休憩を1分延長' : '学習を3分延長';
-    document.getElementById('studyAlarm').classList.add('active');
-    ring(kind);
+	    document.getElementById('studyAlarm').classList.add('active');
+	    syncLiveFlag();
+	    ring(kind);
     alarmInterval = setInterval(() => ring(kind), 1400);
     saveSharedTimer();
   }
@@ -262,9 +278,10 @@
     pomoWorkSeconds = 0;
     extensionDuration = null;
     currentSet = 1;
-    pomoDeadline = 0;
-    unlockSettings(true);
-    drawPomodoro();
+	    pomoDeadline = 0;
+	    unlockSettings(true);
+	    syncLiveFlag();
+	    drawPomodoro();
     saveSharedTimer();
   }
   function nextPhase() {
@@ -594,12 +611,13 @@
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && panel.classList.contains('timer-expanded') && !document.fullscreenElement) syncExpanded(false);
   });
-  document.getElementById('stopwatchStart').onclick = () => {
-    if (stopwatchRunning) { elapsed = stopwatchTotal(); stopwatchRunning = false; }
-    else { startedAt = Date.now(); stopwatchRunning = true; }
-    drawStopwatch();
-  };
-  document.getElementById('stopwatchReset').onclick = () => { elapsed = 0; stopwatchRunning = false; drawStopwatch(); };
+	  document.getElementById('stopwatchStart').onclick = () => {
+	    if (stopwatchRunning) { elapsed = stopwatchTotal(); stopwatchRunning = false; }
+	    else { startedAt = Date.now(); stopwatchRunning = true; }
+	    syncLiveFlag();
+	    drawStopwatch();
+	  };
+	  document.getElementById('stopwatchReset').onclick = () => { elapsed = 0; stopwatchRunning = false; syncLiveFlag(); drawStopwatch(); };
   settingInputs.forEach(input => input.onchange = resetPomodoro);
   document.getElementById('studyPomoStart').onclick = () => {
     prepareAudio();
@@ -607,11 +625,12 @@
     if (pomoPhase === 'complete') resetPomodoro();
     if (!pomoStarted) { readSettings(); pomoRemaining = workMinutes * 60; pomoStarted = true; unlockSettings(false); }
     pomoRunning = !pomoRunning;
-    if (pomoRunning) { pomoDeadline=Date.now()+pomoRemaining*1000; lastPomoTick=Date.now(); }
-    else pomoDeadline=0;
-    saveSharedTimer();
-    drawPomodoro();
-  };
+	    if (pomoRunning) { pomoDeadline=Date.now()+pomoRemaining*1000; lastPomoTick=Date.now(); }
+	    else pomoDeadline=0;
+	    syncLiveFlag();
+	    saveSharedTimer();
+	    drawPomodoro();
+	  };
   document.getElementById('studyPomoReset').onclick = resetPomodoro;
   document.getElementById('studyAlarmStop').onclick = () => stopAlarm(true);
   document.getElementById('studyAlarmExtend').onclick = () => {
@@ -637,8 +656,8 @@
     drawPomodoro();
   };
   ['stopwatchReset','studyPomoReset'].forEach(id => document.getElementById(id)?.addEventListener('click', () => {
-    captureMaterialTime();
-    flushMaterial(activeMaterialId);
+	    captureMaterialTime(true);
+	    flushMaterial(activeMaterialId);
     setTimeout(() => {
       capturedStopwatch = stopwatchTotal();
       capturedPomodoro = pomoWorkSeconds;
@@ -650,12 +669,13 @@
       elapsed = stopwatchTotal();
       stopwatchRunning = false;
     }
-    if (activeTimer === 'pomodoro') {
-      pomoRunning = false;
-      stopAlarm(false);
-    }
-    captureMaterialTime();
-    flushMaterial(activeMaterialId);
+	    if (activeTimer === 'pomodoro') {
+	      pomoRunning = false;
+	      stopAlarm(false);
+	    }
+	    syncLiveFlag();
+	    captureMaterialTime(true);
+	    flushMaterial(activeMaterialId);
     if (activeTimer === 'stopwatch') elapsed = 0;
     else resetPomodoro();
     capturedStopwatch = stopwatchTotal();
@@ -686,18 +706,19 @@
     drawPomodoro();
   }, 1000);
 
-  setInterval(() => {
-    captureMaterialTime();
-    if ((previousStopwatchRunning && !stopwatchRunning) || (previousPomodoroRunning && !pomoRunning)) flushMaterial(activeMaterialId);
-    previousStopwatchRunning = stopwatchRunning;
-    previousPomodoroRunning = pomoRunning;
-    paintSelectedMaterial();
+	  setInterval(() => {
+	    captureMaterialTime();
+	    syncLiveFlag();
+	    previousStopwatchRunning = stopwatchRunning;
+	    previousPomodoroRunning = pomoRunning;
+	    paintSelectedMaterial();
   }, 1000);
 
   drawStopwatch();
   if (!restoreSharedTimer()) resetPomodoro(); else drawPomodoro();
-  ensureActiveMaterial();
-  capturedStopwatch = stopwatchTotal();
+	  ensureActiveMaterial();
+	  syncLiveFlag();
+	  capturedStopwatch = stopwatchTotal();
   capturedPomodoro = pomoWorkSeconds;
   paintSelectedMaterial();
   const notificationButton=document.getElementById('studyNotification');
