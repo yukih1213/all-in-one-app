@@ -590,7 +590,7 @@
       .calendar-view-toggle{display:inline-flex;align-items:center;gap:8px;margin-left:2px}
       .calendar-view-toggle button{order:1;padding:0;border:0;background:transparent;color:#aaa4b0;font-size:12px;font-weight:650;cursor:pointer}
       .calendar-view-toggle button.active{order:0;color:#3f3a46;font-size:15px;font-weight:780}
-      .calendar-view-toggle button:hover{color:#39748b}
+      .calendar-view-toggle button:hover{color:inherit}
       .weekly-board{display:none!important}
       .weekly-board.open{display:grid!important;align-items:stretch!important}
       .weekly-board .week-day{height:auto!important;min-height:138px!important;max-height:none!important;overflow:visible!important}
