@@ -287,6 +287,7 @@
     today.setHours(0,0,0,0);
     let changed = false;
     tasks.forEach(task => {
+      if (task.userAssignedLane) return;
       const overdue = task.due && !task.done && new Date(task.due + 'T23:59:59') < today;
       if (overdue && task.lane !== 'overdue') {
         task.laneBeforeOverdue = task.lane;
@@ -300,6 +301,17 @@
     });
     if (changed) save();
   }
+
+  // ドラッグ＆ドロップでレーン移動した際に userAssignedLane を記録
+  document.addEventListener('drop', e => {
+    const laneZone = e.target.closest('.lane-body');
+    if (!laneZone || typeof dragId === 'undefined' || !dragId) return;
+    const targetTask = tasks.find(x => String(x.id) === String(dragId));
+    if (targetTask) {
+      targetTask.userAssignedLane = true;
+      save();
+    }
+  }, true);
 
   const baseRender = render;
   let lastRenderKey = '';
@@ -882,4 +894,96 @@
   document.head.append(timeFeatureStyle);
 
   updateHistoryButtons();
+
+  // --- カレンダービュー機能 ＆ タスク表示切り替え ---
+  (function(){
+    const titleEl = document.getElementById('taskBoardSectionTitle');
+    if (!titleEl) return;
+
+    const viewSwitch = document.createElement('div');
+    viewSwitch.className = 'task-view-switch';
+    viewSwitch.style.cssText = 'display:inline-flex;gap:4px;margin-left:14px;padding:3px;background:#e2e9ee;border-radius:9px;vertical-align:middle;font-size:11px;font-weight:600';
+    viewSwitch.innerHTML = '<button id="viewBtnBoard" class="active" style="padding:4px 9px;border:0;border-radius:7px;background:#fff;color:#477f98;cursor:pointer;box-shadow:0 1px 4px #0002">ボード</button><button id="viewBtnCal" style="padding:4px 9px;border:0;border-radius:7px;background:transparent;color:#75848c;cursor:pointer">カレンダー</button>';
+    titleEl.append(viewSwitch);
+
+    const calView = document.createElement('div');
+    calView.id = 'taskCalendarView';
+    calView.style.cssText = 'display:none;margin-bottom:28px;background:#fff;border-radius:18px;padding:18px;box-shadow:0 12px 32px #1d1d1f0d;border:1px solid #e0e5e0';
+    document.getElementById('board')?.before(calView);
+
+    let calDate = new Date();
+
+    function renderTaskCalendar() {
+      const year = calDate.getFullYear();
+      const month = calDate.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const startDayOfWeek = (firstDay.getDay() + 7) % 7;
+      const totalDays = lastDay.getDate();
+
+      let html = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <h3 style="margin:0;font-size:16px;color:#35463c">${year}年 ${month + 1}月</h3>
+        <div style="display:flex;gap:6px">
+          <button id="calPrev" style="padding:5px 10px;border:0;border-radius:8px;background:#f0f2ef;color:#555;cursor:pointer">前月</button>
+          <button id="calToday" style="padding:5px 10px;border:0;border-radius:8px;background:#f0f2ef;color:#555;cursor:pointer">今月</button>
+          <button id="calNext" style="padding:5px 10px;border:0;border-radius:8px;background:#f0f2ef;color:#555;cursor:pointer">次月</button>
+        </div>
+      </div>`;
+
+      html += `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center;font-size:11px;font-weight:700;color:#86868b;margin-bottom:6px">
+        <span style="color:#e5484d">日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span style="color:#0071e3">土</span>
+      </div>`;
+
+      html += `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">`;
+
+      for (let i = 0; i < startDayOfWeek; i++) {
+        html += `<div style="min-height:80px;background:#f9faf9;border-radius:10px"></div>`;
+      }
+
+      const todayStr = new Date().toISOString().slice(0, 10);
+      for (let d = 1; d <= totalDays; d++) {
+        const curDate = new Date(year, month, d);
+        const curIso = new Date(curDate.getTime() - curDate.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+        const dayTasks = tasks.filter(t => t.due === curIso);
+        const isToday = curIso === todayStr;
+
+        html += `<div style="min-height:80px;padding:6px;background:${isToday ? '#e8f4ec' : '#f9faf9'};border:1px solid ${isToday ? '#4e9b70' : '#eef2ee'};border-radius:10px">
+          <div style="font-size:11px;font-weight:700;margin-bottom:4px;color:${isToday ? '#4e9b70' : '#333'}">${d}</div>
+          <div style="display:flex;flex-direction:column;gap:3px">`;
+        dayTasks.forEach(t => {
+          html += `<div style="padding:3px 6px;border-radius:6px;background:#fff;font-size:10px;line-height:1.2;color:#333;box-shadow:0 1px 3px rgba(0,0,0,0.06);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${t.done ? 'text-decoration:line-through;opacity:0.6' : ''}" title="${esc(t.title)}">${esc(t.title)}</div>`;
+        });
+        html += `</div></div>`;
+      }
+
+      html += `</div>`;
+      calView.innerHTML = html;
+
+      document.getElementById('calPrev').onclick = () => { calDate.setMonth(calDate.getMonth() - 1); renderTaskCalendar(); };
+      document.getElementById('calToday').onclick = () => { calDate = new Date(); renderTaskCalendar(); };
+      document.getElementById('calNext').onclick = () => { calDate.setMonth(calDate.getMonth() + 1); renderTaskCalendar(); };
+    }
+
+    const btnBoard = document.getElementById('viewBtnBoard');
+    const btnCal = document.getElementById('viewBtnCal');
+    const boardEl = document.getElementById('board');
+    const hintEl = document.querySelector('.hint');
+
+    btnBoard.onclick = () => {
+      btnBoard.classList.add('active'); btnBoard.style.background='#fff'; btnBoard.style.color='#477f98';
+      btnCal.classList.remove('active'); btnCal.style.background='transparent'; btnCal.style.color='#75848c';
+      calView.style.display = 'none';
+      if (boardEl) boardEl.style.display = '';
+      if (hintEl) hintEl.style.display = '';
+    };
+
+    btnCal.onclick = () => {
+      btnCal.classList.add('active'); btnCal.style.background='#fff'; btnCal.style.color='#477f98';
+      btnBoard.classList.remove('active'); btnBoard.style.background='transparent'; btnBoard.style.color='#75848c';
+      if (boardEl) boardEl.style.display = 'none';
+      if (hintEl) hintEl.style.display = 'none';
+      calView.style.display = 'block';
+      renderTaskCalendar();
+    };
+  })();
 })();

@@ -96,7 +96,21 @@
     const seconds = Number(materialRemainders[materialId]) || 0;
     const minutes = Math.floor(seconds / 60);
     if (minutes < 1) return;
-    state.logs.push({id:Date.now(),materialId,minutes,date:iso(new Date()),note:'タイマーから自動記録',createdAt:Date.now()});
+    const now = new Date();
+    const startObj = new Date(Date.now() - seconds * 1000);
+    const startTimeStr = `${String(startObj.getHours()).padStart(2,'0')}:${String(startObj.getMinutes()).padStart(2,'0')}`;
+    const endTimeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    state.logs.push({
+      id: Date.now(),
+      materialId,
+      minutes,
+      date: iso(now),
+      startTime: startTimeStr,
+      endTime: endTimeStr,
+      pauseMinutes: 0,
+      note: 'タイマーから自動記録',
+      createdAt: Date.now()
+    });
     materialRemainders[materialId] = seconds - minutes * 60;
     localStorage.setItem(materialRemainderKey, JSON.stringify(materialRemainders));
     save();
@@ -408,6 +422,7 @@
   function openLogEditor(id) {
     const log = state.logs.find(item => String(item.id) === String(id));
     if (!log) return;
+    globalThis.selectedLogId = String(log.id);
     editingLogId = log.id;
     document.getElementById('editLogMaterial').innerHTML = state.materials.map(material => '<option value="'+material.id+'">'+esc(material.name)+'</option>').join('');
     document.getElementById('editLogMaterial').value = log.materialId;
@@ -415,6 +430,7 @@
     document.getElementById('editLogHours').value = Math.floor(Number(log.minutes || 0) / 60);
     document.getElementById('editLogMinutes').value = Number(log.minutes || 0) % 60;
     document.getElementById('editLogNote').value = log.note || '';
+    render();
     logOverlay.classList.add('open');
   }
   function decorateLogs() {
@@ -436,6 +452,7 @@
     if (!log || !window.confirm('この学習記録を本当に削除しますか？')) return;
     const deletedIndex = state.logs.findIndex(item => String(item.id) === String(editingLogId));
     state.logs = state.logs.filter(item => String(item.id) !== String(editingLogId));
+    if (String(globalThis.selectedLogId) === String(editingLogId)) globalThis.selectedLogId = null;
     save();
     closeLogEditor();
     render();

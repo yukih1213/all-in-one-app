@@ -138,7 +138,7 @@
   if (current === 'study_time.html') {
     const primaryStudyButtonStyle = document.getElementById('studyPrimaryButtonStyle') || document.head.appendChild(document.createElement('style'));
     primaryStudyButtonStyle.id = 'studyPrimaryButtonStyle';
-    primaryStudyButtonStyle.textContent = '#saveLog,.timer-row button.primary,#studyTimerApply,.study-alarm button,.new-material-form button,.study-log-actions button:not(.cancel-log):not(.delete-log){background:#8ec9e4!important;color:#1e5870!important;box-shadow:0 3px 10px #5ca9cd2b!important}.study-alarm #studyAlarmExtend{background:#eef8fc!important;color:#3e7891!important;box-shadow:inset 0 0 0 1px #b9ddec!important}#saveLog:hover,.timer-row button.primary:hover,#studyTimerApply:hover,.study-alarm button:hover,.new-material-form button:hover,.study-log-actions button:not(.cancel-log):not(.delete-log):hover{background:#7dbddd!important;color:#174d64!important}';
+    primaryStudyButtonStyle.textContent = '#saveLog,.timer-row button.primary,#studyTimerApply,.study-alarm button,.new-material-form button,.study-log-actions button:not(.cancel-log):not(.delete-log){background:#4e9b70!important;color:#ffffff!important;box-shadow:0 3px 10px #4e9b7040!important}.study-alarm #studyAlarmExtend{background:#eef8fc!important;color:#3e7891!important;box-shadow:inset 0 0 0 1px #b9ddec!important}#saveLog:hover,.timer-row button.primary:hover,#studyTimerApply:hover,.study-alarm button:hover,.new-material-form button:hover,.study-log-actions button:not(.cancel-log):not(.delete-log):hover{background:#3e7b59!important;color:#ffffff!important}';
     const positionMaterialManager = () => {
       const manageButton = document.getElementById('manageMaterials');
       const materialsHeading = document.querySelector('.layout > .panel:first-child .panel-title');
@@ -199,4 +199,177 @@
       document.head.append(rowStyle);
     }
   }
+
+  // --- Obsidian Markdown エクスポート機能（右下フローティングボタン） ---
+  (function(){
+    if (document.getElementById('exportObsidianFab')) return;
+    const fab = document.createElement('button');
+    fab.id = 'exportObsidianFab';
+    fab.innerHTML = '📄 Obsidian';
+    fab.title = 'Obsidianログを出力';
+    fab.style.cssText = 'position:fixed;bottom:22px;right:22px;z-index:9990;display:inline-flex;align-items:center;gap:6px;padding:9px 15px;border:0;border-radius:999px;background:#4e9b70;color:#fff;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 6px 22px rgba(78,155,112,0.35);transition:transform .18s ease,box-shadow .18s ease';
+    fab.onmouseover = () => fab.style.transform = 'translateY(-2px)';
+    fab.onmouseout = () => fab.style.transform = 'none';
+    fab.onclick = () => openObsidianModal();
+    document.body.append(fab);
+
+    let modal = document.getElementById('obsidianModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'obsidianModal';
+      modal.style.cssText = 'display:none;position:fixed;inset:0;z-index:99999;background:rgba(29,29,31,0.45);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px';
+      modal.innerHTML = `
+        <div style="width:min(400px,100%);background:#fff;border-radius:20px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,0.25)">
+          <h3 style="margin:0 0 10px;font-size:17px;color:#26332c">Obsidianログ出力</h3>
+          <p style="margin:0 0 16px;font-size:12px;color:#7c8880;line-height:1.5">選択した期間のタスク・学習記録・振り返りを、1日1ファイルのObsidianデイリーノート用Markdownとして書き出します。</p>
+          <div style="display:flex;gap:12px;margin-bottom:18px;">
+            <label style="flex:1;font-size:12px;color:#35463c;font-weight:600">
+              開始日
+              <input id="obsidianLogDateStart" type="date" style="display:block;width:100%;margin-top:6px;padding:10px;border:1px solid #e0e5e0;border-radius:10px;font:inherit;font-size:13px;box-sizing:border-box">
+            </label>
+            <label style="flex:1;font-size:12px;color:#35463c;font-weight:600">
+              終了日
+              <input id="obsidianLogDateEnd" type="date" style="display:block;width:100%;margin-top:6px;padding:10px;border:1px solid #e0e5e0;border-radius:10px;font:inherit;font-size:13px;box-sizing:border-box">
+            </label>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end">
+            <button id="closeObsidianModal" style="padding:9px 14px;border:0;border-radius:10px;background:#f0f2ef;color:#666;font:inherit;font-size:12px;cursor:pointer">キャンセル</button>
+            <button id="downloadObsidianLog" style="padding:9px 16px;border:0;border-radius:10px;background:#4e9b70;color:#fff;font:inherit;font-size:12px;font-weight:700;cursor:pointer">.mdを出力</button>
+          </div>
+        </div>
+      `;
+      document.body.append(modal);
+
+      document.getElementById('closeObsidianModal').onclick = () => modal.style.display = 'none';
+      modal.onclick = e => { if (e.target === modal) modal.style.display = 'none'; };
+
+      document.getElementById('downloadObsidianLog').onclick = () => {
+        const startInput = document.getElementById('obsidianLogDateStart');
+        const endInput = document.getElementById('obsidianLogDateEnd');
+        const startDateStr = startInput.value || new Date().toISOString().slice(0, 10);
+        const endDateStr = endInput.value || startDateStr;
+
+        let currentDate = new Date(startDateStr);
+        const endDate = new Date(endDateStr);
+
+        if (currentDate > endDate) {
+          alert('開始日は終了日より前の日付を選択してください。');
+          return;
+        }
+
+        const dates = [];
+        while (currentDate <= endDate) {
+          dates.push(currentDate.toISOString().slice(0, 10));
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+        dates.forEach((d, index) => {
+          setTimeout(() => {
+            exportObsidianMarkdown(d);
+          }, index * 200);
+        });
+
+        modal.style.display = 'none';
+      };
+    }
+
+    function openObsidianModal() {
+      const today = new Date().toISOString().slice(0, 10);
+      const startInput = document.getElementById('obsidianLogDateStart');
+      const endInput = document.getElementById('obsidianLogDateEnd');
+      if (startInput) startInput.value = today;
+      if (endInput) endInput.value = today;
+      modal.style.display = 'flex';
+    }
+
+    function exportObsidianMarkdown(dateStr) {
+      const studyState = JSON.parse(localStorage.getItem('study-plus-local-v1') || '{"materials":[],"logs":[]}');
+      const dayStudyLogs = (studyState.logs || []).filter(l => l.date === dateStr);
+      const totalStudyMinutes = dayStudyLogs.reduce((acc, curr) => acc + (curr.minutes || 0), 0);
+
+      // 属性（教材）ごとの集計
+      const breakdownMap = {};
+      dayStudyLogs.forEach(l => {
+        const mat = (studyState.materials || []).find(m => m.id === l.materialId) || { name: 'その他' };
+        breakdownMap[mat.name] = (breakdownMap[mat.name] || 0) + (l.minutes || 0);
+      });
+
+      // 時間帯別の集計 (午前, 午後, 夜間, 深夜)
+      const timeSlots = { '午前(6-12時)': 0, '午後(12-18時)': 0, '夜間(18-24時)': 0, '深夜(0-6時)': 0 };
+      dayStudyLogs.forEach(l => {
+        if (l.startTime) {
+          const hour = parseInt(l.startTime.split(':')[0], 10);
+          if (hour >= 6 && hour < 12) timeSlots['午前(6-12時)'] += l.minutes;
+          else if (hour >= 12 && hour < 18) timeSlots['午後(12-18時)'] += l.minutes;
+          else if (hour >= 18 && hour < 24) timeSlots['夜間(18-24時)'] += l.minutes;
+          else timeSlots['深夜(0-6時)'] += l.minutes;
+        }
+      });
+
+      const totalH = Math.floor(totalStudyMinutes / 60);
+      const totalM = totalStudyMinutes % 60;
+      const totalStr = totalH > 0 ? `${totalH}時間${totalM}分` : `${totalM}分`;
+
+      let md = `---
+date: ${dateStr}
+tags: [hibi, study-log]
+total_study_minutes: ${totalStudyMinutes}
+---
+
+# 📊 ${dateStr} 学習ログ分析
+
+## ⏱ 1. 学習時間の内訳・割合
+- **合計学習時間**: ${totalStr} (${totalStudyMinutes}分)
+`;
+
+      if (Object.keys(breakdownMap).length > 0) {
+        Object.entries(breakdownMap).forEach(([name, min]) => {
+          const pct = totalStudyMinutes > 0 ? ((min / totalStudyMinutes) * 100).toFixed(1) : '0.0';
+          const h = Math.floor(min / 60);
+          const m = min % 60;
+          const durationText = h > 0 ? `${h}時間${m}分` : `${m}分`;
+          md += `- **${name}**: ${durationText} (${pct}%)\n`;
+        });
+      } else {
+        md += `- 記録なし\n`;
+      }
+
+      md += `\n## 🕒 2. タイムライン（何時から何時）\n`;
+      if (dayStudyLogs.length) {
+        // 開始時間順にソート
+        const sortedLogs = [...dayStudyLogs].sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+        sortedLogs.forEach(l => {
+          const mat = (studyState.materials || []).find(m => m.id === l.materialId) || { name: 'その他' };
+          const timeRange = (l.startTime && l.endTime) ? `${l.startTime}〜${l.endTime}` : '時間未記録';
+          const pauseText = l.pauseMinutes ? ` (休憩: ${l.pauseMinutes}分)` : '';
+          md += `- **${timeRange}** [${mat.name}] ${l.minutes}分${pauseText}\n`;
+          if (l.note) {
+            md += `  - メモ: ${l.note}\n`;
+          }
+        });
+      } else {
+        md += `学習記録はありません\n`;
+      }
+
+      md += `\n## 💡 3. 時間帯別分布\n`;
+      Object.entries(timeSlots).forEach(([slot, min]) => {
+        if (min > 0) {
+          const h = Math.floor(min / 60);
+          const m = min % 60;
+          const text = h > 0 ? `${h}時間${m}分` : `${m}分`;
+          md += `- **${slot}**: ${text}\n`;
+        }
+      });
+
+      const blob = new Blob([md], { type: 'text/markdown;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${dateStr}_StudyLog.md`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+  })();
 })();
