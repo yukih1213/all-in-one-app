@@ -21,6 +21,7 @@
     .meta .spent{font-size:10px!important}
     .meta .spent{justify-self:end!important}
     .lane[data-lane="now"] .meta{display:flex!important;flex-direction:row!important;align-items:center!important;gap:6px!important;margin-top:4px!important}
+    .lane[data-lane="now"] .meta .due.overdue{display:inline-flex!important;align-items:center!important;color:#e5484d!important}
     .lane[data-lane="now"] .lane-body{min-height:190px!important;padding:8px!important}
     .lane[data-lane="now"] .task{padding:8px 9px!important;gap:6px!important}
     .lane[data-lane="now"] .task-title{font-size:12px!important;line-height:1.35!important}
