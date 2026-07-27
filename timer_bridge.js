@@ -67,6 +67,7 @@
   }
 
   function checkTimer() {
+    if (location.pathname.endsWith('/study_time.html') || location.pathname.endsWith('/study_time')) return;
     let state;
     try { state = JSON.parse(localStorage.getItem(timerKey) || 'null'); } catch (_) { return; }
     if (!state?.running || !state.deadline || Date.now() < state.deadline) return;

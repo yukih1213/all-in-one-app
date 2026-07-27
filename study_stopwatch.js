@@ -5,17 +5,16 @@
   panel.id = 'studyStopwatch';
   panel.className = 'panel';
   panel.innerHTML = `
-    <div class="study-timer-head">
-      <h2 class="panel-title">学習タイマー</h2>
-      <div class="study-timer-head-actions">
-        <div class="study-timer-tabs">
-          <button class="active" data-timer-tab="stopwatch">ストップウォッチ</button>
-          <button data-timer-tab="pomodoro">セットタイマー</button>
-        </div>
-        <button id="studyTimerExpand" class="study-timer-expand" type="button">拡大</button>
-        <button id="studyNotification" class="study-timer-expand" type="button">通知を許可</button>
-      </div>
-    </div>
+	    <div class="study-timer-head">
+	      <h2 class="panel-title">学習タイマー</h2>
+	      <div class="study-timer-head-actions">
+	        <div class="study-timer-tabs">
+	          <button class="active" data-timer-tab="stopwatch">ストップウォッチ</button>
+	          <button data-timer-tab="pomodoro">セットタイマー</button>
+	        </div>
+	        <button id="studyTimerExpand" class="study-timer-expand" type="button">拡大</button>
+	      </div>
+	    </div>
     <div id="timerMaterial" class="timer-material" aria-live="polite"></div>
     <div class="study-timer-view active" data-timer-view="stopwatch">
       <div class="timer-row"><strong id="stopwatchClock">00:00:00</strong><button id="stopwatchStart" class="primary">開始</button><button id="stopwatchReset">リセット</button></div>
@@ -62,7 +61,7 @@
   let elapsed = 0, startedAt = 0, stopwatchRunning = false;
   let pomoPhase = 'work', pomoRemaining = 25 * 60, pomoRunning = false, pomoStarted = false;
   let pomoWorkSeconds = 0, currentSet = 1, targetSets = 4, workMinutes = 25, breakMinutes = 5;
-  let audioContext = null, alarmInterval = null, ringProgressOverride = null, ringPhaseOverride = null, currentAlarmKind = null, extensionDuration = null;
+  let audioContext = null, alarmInterval = null, ringProgressOverride = null, ringPhaseOverride = null, currentAlarmKind = null, currentAlarmDeadline = 0, extensionDuration = null;
   const materialTimerKey = 'study-timer-material-v1';
   const materialRemainderKey = 'study-timer-remainders-v1';
   const materialLiveKey = 'study-timer-live-active-v1';
@@ -225,22 +224,25 @@
     });
   }
 	  function stopAlarm(resumeNextPhase = false) {
-    if (alarmInterval) clearInterval(alarmInterval);
-    alarmInterval = null;
-    currentAlarmKind = null;
-    ringProgressOverride = null;
-    ringPhaseOverride = null;
-    document.getElementById('studyAlarm').classList.remove('active');
-	    if (resumeNextPhase && pomoPhase !== 'complete') { pomoRunning = true; pomoDeadline=Date.now()+pomoRemaining*1000; lastPomoTick=Date.now(); }
-	    window.HibiTimerBridge?.stopAlarm();
-	    syncLiveFlag();
-	    saveSharedTimer();
-	    drawPomodoro();
-	  }
-  function startAlarm(kind, message) {
-    stopAlarm(false);
-    pomoRunning = false;
-    currentAlarmKind = kind;
+	    if (alarmInterval) clearInterval(alarmInterval);
+	    alarmInterval = null;
+	    currentAlarmKind = null;
+	    const dismissedDeadline = currentAlarmDeadline || pomoDeadline;
+	    currentAlarmDeadline = 0;
+	    ringProgressOverride = null;
+	    ringPhaseOverride = null;
+	    document.getElementById('studyAlarm').classList.remove('active');
+		    if (resumeNextPhase && pomoPhase !== 'complete') { pomoRunning = true; pomoDeadline=Date.now()+pomoRemaining*1000; lastPomoTick=Date.now(); }
+		    window.HibiTimerBridge?.stopAlarm(dismissedDeadline);
+		    syncLiveFlag();
+		    saveSharedTimer();
+		    drawPomodoro();
+		  }
+	  function startAlarm(kind, message) {
+	    stopAlarm(false);
+	    pomoRunning = false;
+	    currentAlarmDeadline = pomoDeadline || Date.now();
+	    currentAlarmKind = kind;
     ringProgressOverride = 1;
     ringPhaseOverride = kind === 'breakEnd' ? 'break' : 'work';
     document.getElementById('studyAlarmMessage').textContent = message;
@@ -721,12 +723,6 @@
 	  capturedStopwatch = stopwatchTotal();
   capturedPomodoro = pomoWorkSeconds;
   paintSelectedMaterial();
-  const notificationButton=document.getElementById('studyNotification');
-  if (notificationButton) {
-    const paintNotification=()=>{notificationButton.textContent=!('Notification' in window)?'通知非対応':Notification.permission==='granted'?'通知オン':Notification.permission==='denied'?'通知は設定で拒否中':'通知を許可';notificationButton.disabled=!('Notification' in window)||Notification.permission==='denied'};
-    notificationButton.onclick=async()=>{window.HibiTimerBridge?.unlockAudio();await window.HibiTimerBridge?.requestPermission();paintNotification()};
-    paintNotification();
-  }
 })();
 
 // タイムラインと最近の記録を、教材を問わず同じログIDで同期して強調表示する。
